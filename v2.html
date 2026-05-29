@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mendoza · Set 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#000;--bg2:#1C1C1E;--bg3:#2C2C2E;--bg4:#3A3A3C;--sep:rgba(84,84,88,.65);--gold:#C49A4A;--cr:#FFF;--t2:rgba(235,235,245,.6);--t3:rgba(235,235,245,.3);--blue:#0A84FF;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+*{-webkit-tap-highlight-color:transparent;box-sizing:border-box;margin:0;padding:0}
+html{height:100%;background:var(--bg)}
+body{color:var(--cr);font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.5;display:flex;flex-direction:column;overflow:hidden;height:100dvh;padding-top:var(--safe-t)}
+/* HDR */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:.5px solid var(--sep);flex-shrink:0}
+.logo{font-family:Georgia,"Times New Roman",serif;font-size:20px;font-weight:300;letter-spacing:.03em}
+.logo em{color:var(--gold);font-style:italic}
+.pax{font-size:11px;color:var(--t3);letter-spacing:.07em;text-transform:uppercase}
+/* PHASE */
+.ptabs{display:flex;background:var(--bg2);border-bottom:.5px solid var(--sep);flex-shrink:0}
+.ptab{flex:1;padding:10px 8px;font-size:12px;font-weight:500;color:var(--t2);border:none;background:none;cursor:pointer;touch-action:manipulation;border-bottom:2px solid transparent;margin-bottom:-.5px;text-align:center;line-height:1.3}
+.ptab.a{color:var(--gold);border-bottom-color:var(--gold)}
+/* SCROLL MAIN */
+.main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg)}
+/* DAY NAV */
+.dnav{position:sticky;top:0;z-index:100;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:.5px solid var(--sep);padding:10px 14px;overflow-x:scroll;-webkit-overflow-scrolling:touch;display:flex;gap:6px;scrollbar-width:none}
+.dnav::-webkit-scrollbar{display:none}
+.dbtn{padding:6px 16px;border-radius:999px;font-size:12px;font-weight:500;border:.5px solid var(--sep);background:transparent;color:var(--t2);cursor:pointer;touch-action:manipulation;white-space:nowrap;-webkit-appearance:none}
+.dbtn.a{background:var(--gold);border-color:var(--gold);color:#1a0d00;font-weight:600}
+/* DAY HDR */
+.dhdr{padding:20px 16px 14px}
+.d-date{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:3px}
+.d-title{font-family:Georgia,"Times New Roman",serif;font-size:28px;font-weight:400;line-height:1.2;margin-bottom:6px}
+.d-sub{font-size:14px;color:var(--t2);margin-bottom:16px;line-height:1.5}
+/* NAV BTNS */
+.navbtns{display:flex;gap:8px;flex-wrap:wrap}
+.nbtn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;touch-action:manipulation;-webkit-appearance:none;white-space:nowrap;cursor:pointer}
+.nbtn-gm{background:#1a73e8;color:#fff}
+.nbtn-wz{background:#05C8F7;color:#000}
+.nbtn-ap{background:var(--bg3);color:var(--cr);border:.5px solid var(--sep)}
+/* MAP */
+.map-wrap{position:relative;background:var(--bg2)}
+#day-map{height:260px}
+.leaflet-container{background:#111!important}
+.leaflet-control-attribution{display:none}
+.map-fade{position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(transparent,var(--bg));pointer-events:none;z-index:500}
+/* SECTION HEADER */
+.sec-hdr{padding:14px 16px 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--t3);border-top:.5px solid var(--sep)}
+/* STOP CARDS — timeline style */
+.stops-list{padding:8px 0 120px}
+.stop-row{display:flex;align-items:stretch;padding:0 16px}
+.stop-tl{width:20px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:5px}
+.stop-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;border:2px solid var(--bg);box-shadow:0 0 0 1px rgba(255,255,255,.1)}
+.stop-line{width:2px;flex:1;min-height:10px;margin-top:3px;border-radius:1px}
+.stop-last .stop-line{display:none}
+.stop-card{flex:1;margin-left:10px;padding:10px 0 18px;border-bottom:.5px solid var(--sep);cursor:pointer;touch-action:manipulation;-webkit-appearance:none;background:none;border:none;border-bottom:.5px solid var(--sep);text-align:left;width:100%;display:flex;gap:10px}
+.stop-last .stop-card{border-bottom:none;padding-bottom:8px}
+.stop-info{flex:1;min-width:0}
+.stop-meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.stop-time{font-size:11.5px;color:var(--t3);font-weight:500}
+.badge,.status{font-size:10px;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.b-famous{background:rgba(160,144,212,.18);color:#A090D4}
+.b-boutique{background:rgba(90,175,120,.18);color:#5AAF78}
+.b-almoco{background:rgba(207,128,80,.18);color:#CF8050}
+.b-cidade{background:rgba(144,136,128,.18);color:#909080}
+.b-montanha{background:rgba(104,152,192,.18);color:#6898C0}
+.b-hotel{background:rgba(192,96,96,.18);color:#C06060}
+.s-ok{background:rgba(91,168,112,.15);color:#5BA870}
+.s-warn{background:rgba(196,148,74,.15);color:#C4944A}
+.s-nohr{background:var(--bg3);color:var(--t3)}
+.stop-name{font-size:16px;font-weight:600;line-height:1.25;color:var(--cr);margin-bottom:3px}
+.stop-hrs{font-size:12px;color:var(--t3);margin-bottom:3px}
+.stop-desc{font-size:13px;color:var(--t2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.stop-thumb{width:72px;height:72px;border-radius:11px;object-fit:cover;flex-shrink:0;background:var(--bg3)}
+.stop-caret{font-size:11px;color:var(--t3);margin-top:5px}
+/* OVERLAY */
+.ov{position:fixed;top:0;left:0;right:0;bottom:0;background:transparent;z-index:8000;pointer-events:none;transition:background .3s}
+.ov.open{background:rgba(0,0,0,.7);pointer-events:auto}
+/* SHEET */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:8001;background:var(--bg2);border-radius:20px 20px 0 0;max-height:93dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,.72,0,1);padding-bottom:var(--safe-b);will-change:transform}
+.sheet.open{transform:translateY(0)}
+.sh-handle{flex-shrink:0;padding:12px 0 0;display:flex;justify-content:center;cursor:pointer;touch-action:none}
+.sh-handle div{width:36px;height:4px;background:var(--bg4);border-radius:2px}
+.sh-close{position:absolute;top:20px;right:16px;z-index:10;width:30px;height:30px;border-radius:50%;background:var(--bg3);border:none;color:var(--t2);font-size:14px;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;-webkit-appearance:none}
+/* photo scroll-snap */
+.ph-scroll{display:flex;overflow-x:scroll;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;flex-shrink:0;scrollbar-width:none}
+.ph-scroll::-webkit-scrollbar{display:none}
+.ph-slide{flex:0 0 100%;scroll-snap-align:start;position:relative}
+.ph-slide img{width:100%;height:220px;object-fit:cover;display:block;background:var(--bg3)}
+.ph-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px}
+.ph-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.35);transition:background .2s}
+.ph-dot.a{background:#fff}
+/* sheet body */
+.sh-body{overflow-y:scroll;-webkit-overflow-scrolling:touch;flex:1;padding:0}
+.sh-body::-webkit-scrollbar{display:none}
+.sh-inner{padding:14px 16px 10px}
+.sh-name{font-family:Georgia,"Times New Roman",serif;font-size:24px;font-weight:400;line-height:1.25;margin-bottom:8px}
+.sh-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.sh-rating{font-size:13px;color:var(--gold);display:flex;align-items:center;gap:4px}
+.sh-sect{margin-bottom:16px}
+.sh-sect-t{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px}
+.h-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
+.h-day{color:var(--t3);font-size:13px}
+.h-val{color:var(--cr);font-size:13px}
+.h-val.cl{color:var(--t3);font-style:italic}
+.sh-desc{font-size:14px;color:var(--t2);line-height:1.65}
+/* actions */
+.sh-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:14px;border-top:.5px solid var(--sep)}
+.ab{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 8px;border-radius:12px;font-size:13px;font-weight:500;text-decoration:none;cursor:pointer;touch-action:manipulation;border:.5px solid var(--sep);color:var(--t2);background:var(--bg3);-webkit-appearance:none;white-space:nowrap}
+.ab.full{grid-column:1/-1}
+.ab.site{background:var(--blue);border-color:var(--blue);color:#fff}
+.ab.wz{background:#05C8F7;border-color:#05C8F7;color:#000}
+.ab.wa{background:#25D366;border-color:#25D366;color:#fff}
+.ab.ap{background:var(--bg3);border-color:var(--sep);color:var(--cr)}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="logo">Mendoza <em>·</em> Set 2026</div>
+  <div class="pax">4 adultos · 2 bebês</div>
+</div>
+<div class="ptabs">
+  <button class="ptab a" id="tab-uco">🏔 Valle de Uco · 06–09/09</button>
+  <button class="ptab" id="tab-city">🍷 Mendoza Centro · 09–15/09</button>
+</div>
+<div class="main" id="main">
+  <div class="dnav" id="dnav"></div>
+  <div id="content"></div>
+</div>
+<div class="ov" id="ov"></div>
+<div class="sheet" id="sheet">
+  <button class="sh-close" id="shClose">✕</button>
+  <div class="sh-handle" id="shHandle"><div></div></div>
+  <div class="sh-body">
+    <div class="ph-scroll" id="phScroll"></div>
+    <div class="sh-inner">
+      <div class="sh-name" id="shName"></div>
+      <div class="sh-badges" id="shBadges"></div>
+      <div class="sh-sect" id="shHrsSect">
+        <div class="sh-sect-t">Horários de funcionamento</div>
+        <div class="h-grid" id="shHrs"></div>
+      </div>
+      <div class="sh-sect">
+        <div class="sh-sect-t">Sobre o local</div>
+        <div class="sh-desc" id="shDesc"></div>
+      </div>
+      <div class="sh-acts" id="shActs"></div>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const DATA={"uco":[{"label":"06/09","date":"Sábado, 6 set","title":"Chegada — Valle de Uco","sub":"Tarde de chegada. Relaxar no hotel e jantar no Dux Casa de Fuegos.","route":null,"waze":null,"stops":[{"t":"hotel","time":"~16h","name":"Casa Septem — Check-in","badge":"hotel","hrs":"24h (hotel)","st":"ok","stl":"ABERTO","desc":"57ha de vinhedos e álamos. Lago artificial, spa, piscina infinita. Vista para o Cordón del Plata e vulcão Tupungato. Jantar no Dux Casa de Fuegos.","lat":-33.5381164,"lng":-69.0210418,"rating":4.3,"rcount":433,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZMWzklitRjl1VAGwIZLtDuzVmrw_KaON_YdPf7xg-P9Qa0sgq_pOBHcuZ4t69sNOhrRQt0Zbcvs0_xAiuiVifPDMVtZi-hnujz7WcELvgK3lgpC0txidvPSJzVaOnoCa5oF2sOYZqdTWNB_ASs=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZNgbKpJINJJHNDDfYF943QTKKj196kLzViYo2WHN6yFBZYrFo1vCo7IJZscVnMBqvhcA_VR1fFcibnQasjt_maZxvBaasn4xa35WXmoXBu9qCYVZlT2O01tOLHBvefAqGNu1oPkbJkRF2QXvg=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZOWCQ_SDMdJs6kM_B_vDXFfUAjb8Vwq-vw6AF0RNuhgF-pUgzSB2iXQun9gxn7EmOxrATEVHR-6PAM-n1BliGYNZkFcfTCdZlAU34fXs1_vHghvqgTqDcDxcOk52qtNmm58Cbwwt9zoT9lV=s800-w800-h600"],"website":"http://www.casaseptem.com/","gmaps":"https://maps.google.com/?cid=13672737749825343967","phone":"+54 9 261 399-6400","wa":"5492613996400","hours":{"Seg":"24h","Ter":"24h","Qua":"24h","Qui":"24h","Sex":"24h","Sáb":"24h","Dom":"24h"}}]},{"label":"07/09","date":"Domingo, 7 set","title":"Salentein + Andeluna","sub":"As mais icônicas do Valle de Uco. Almoço no Killka com vista para o Tupungato.","route":"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=place_id:ChIJ-Uf4joMvfJYR39FpzYpSv70&waypoints=place_id:ChIJmdXbf881fJYRJs1fUXspTcc&destination=place_id:ChIJ69oDQow0fJYR3DtYsnUH79w","waze":"https://waze.com/ul?ll=-33.4944723,-69.2431842&navigate=yes","stops":[{"t":"famous","time":"10h20 – 15h30","name":"Espacio Salentein + Almoço Killka","badge":"famosa","hrs":"Ter–Dom 10h–17h | ⛔ Fechado Segundas","st":"ok","stl":"ABERTO DOM ✓","desc":"Arquitetura em catedral subterrânea com capelinha central. Tour + almoço harmonizado no Killka com vista para os Andes (~$70–90/pessoa). Reserve com antecedência.","lat":-33.4944723,"lng":-69.2431842,"rating":4.6,"rcount":2001,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZNlydkQZh8UTAP81_Gny0BofCECh_eAxH2E2sSwAJEWgSmA91iPKwf03Ch623FMWzzrNdKOHWBLRW00aCdwOgDOzeFNzZGK1LLc6I6sVVl24zJJc6hvwu2PspNEo2Z0QynuI9vhu7g1Mh3_DkijCYWtZA=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZOEm7jAu6VAKJ8pAJRAe1Ve_mcVOCpRde2G3RRXJPSAimxbNdc9hDna_tbU-yodzEWL7dyFb1nTFjFKOQDDcsSU6Nj1G7quaBu2P-k1r5wJOZYaM0KBOl8ywPyVXVdGSazNfeMbYdTUEfekb4k=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZOHFEwF61XI7Q3Y-6CKiWxSMCGaftVL3XP9XZvcvj0I7_DMpRssBrfxC1DaFgxqS35GMX8qcptsaHkM5LY6aCc84HJif15YXOlHcNRI3n9vQNUQkLFyMYX_t1auR953t9mmcMUrbigy3ValkE1OVGgK8Q=s800-w800-h600"],"website":"http://www.bodegasalentein.com/reservas","gmaps":"https://maps.google.com/?cid=14361180396377328934","phone":"+54 261 554-7902","wa":"5426155547902","hours":{"Seg":"FECHADO","Ter":"10h–17h","Qua":"10h–17h","Qui":"10h–17h","Sex":"10h–17h","Sáb":"10h–17h","Dom":"10h–17h"}},{"t":"boutique","time":"16h – 17h30","name":"Bodega Andeluna","badge":"boutique","hrs":"Todos os dias 9h–21h ✓","st":"ok","stl":"ABERTO ✓","desc":"Ao pé do vulcão Tupungato. Único Cabernet Franc branco da Argentina. Wines premiados, tasting personalizado. Uma das mais fotogênicas da Argentina.","lat":-33.455505,"lng":-69.21215,"rating":4.6,"rcount":711,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZMnvuSCARoZmrXQMUSVBHW1_ePp9AGCUrFMpFjlyhOz66CuLDLREf0ZuBCHKJuxBrekwXey_N1BKQN5URTXjOX3VbmN1OrELreuqTNOIXCXUd_muW4F6bzWcChhfyCSPKybS65hrSyrOobRKAg=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZNPCYH087JyM07VGxOxJGyy5W-RybHJ_xYHHwLqg4J7oR9X8lPtASLOx9T7_KgV4uuPjbx8UXLieIxu-xiiRjHgSIBiA72JHLCgCjHdm_jCsRCmz8Ii91-5RUGEMnP2FJsDXznJLZGvoUwZFUQ=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZOKi8rdR7s56udpT7t2BILGd-tKYNwtvMbdfYi-esfqnr3B4Lku7f71QGHlcSqA7a5NlynO6ZB4KLGMLX4SdsiM1iU48eP-YGCgCQQ4po3JqW0Cucpq4SRfg4Mdl5Agri3CqWpAVIxgCbDH=s800-w800-h600"],"website":"http://www.andeluna.com.ar/","gmaps":"https://maps.google.com/?cid=15919951409862687708","phone":"+54 261 460-6855","wa":"542614606855","hours":{"Seg":"9h–21h","Ter":"9h–21h","Qua":"9h–21h","Qui":"9h–21h","Sex":"9h–21h","Sáb":"9h–21h","Dom":"9h–21h"}}]},{"label":"08/09","date":"Segunda-feira, 8 set","title":"Zuccardi ★ Michelin + Domaine Bousquet","sub":"O melhor vinhedo do mundo + a joia orgânica francesa do Vale.","route":"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=place_id:ChIJ-Uf4joMvfJYR39FpzYpSv70&waypoints=place_id:ChIJT_LtBzgWfJYRd-CEl9RD8dY&destination=place_id:ChIJX1UgWF8zfJYRPucXnkiLBII","waze":"https://waze.com/ul?ll=-33.7723604,-69.1566268&navigate=yes","stops":[{"t":"famous","time":"10h20 – 16h","name":"Zuccardi Valle de Uco + Piedra Infinita ★","badge":"famosa","hrs":"Todos os dias 9h–18h ✓","st":"warn","stl":"RESERVE URGENTE","desc":"Top 3 no World's Best Vineyards. Arquitetura de pedra integrada à montanha. Restaurante Piedra Infinita: 1 Estrela Michelin + Green Star 2025. Reserve 2–3 semanas antes.","lat":-33.7723604,"lng":-69.1566268,"rating":4.3,"rcount":1089,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZM66u_LL4bDL3_IrBvJsnHLPBshLFbSQQaIL3J5z9l27Vn_GerFj2y6OmClnRVbgN6_r3jLGrVISpsQe1Fbw-JWyf2dn5UE-hV8Ou6qX408fMO1D5ivzjuXQJx12dkh4NywIePKKF1U4w7opQ=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZM1z4yMMaWwfH7mvxe6H8Y73ALFuQFZSfSaQJdfrR8U-2IR3GmP7yrV5FU7GSX7rliKBdn4ewEt20atxdhE_W2mDq-ip3c1PZLpkgtiL_cHr_p_D_cbagId0HGUz1V7fanIywhiPiyi7lYoolY=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZNnqAgd9QgoQVCQTEXfbA9SjSGUqgKviAx4x3r7M79JIwbxBuVEGaotYxmqi3bPvJM0wAkYvGds2qIzh4m66XVSws2NzDobCliUktk3sLvjXdsHVW4ExpQKpCXCu9YJZITsPNw5EIF373pK=s800-w800-h600"],"website":"http://www.zuccardiwines.com/","gmaps":"https://maps.google.com/?cid=15488235173858041975","phone":"+54 261 441-0090","wa":"542614410090","hours":{"Seg":"9h–18h","Ter":"9h–18h","Qua":"9h–18h","Qui":"9h–18h","Sex":"9h–18h","Sáb":"9h–18h","Dom":"9h–18h"}},{"t":"boutique","time":"17h – 18h","name":"Domaine Bousquet","badge":"boutique","hrs":"Todos os dias 9h–17h30 ✓","st":"ok","stl":"ABERTO ✓","desc":"Família francesa de 4ª geração a 1.200m de altitude. Vinhos orgânicos certificados. Melhor custo-benefício do Vale (~$20 tasting / ~$60 almoço 5 etapas).","lat":-33.43283,"lng":-69.1923705,"rating":4.3,"rcount":668,"photos":["https://lh3.googleusercontent.com/places/ANXAkqE-3lDH_jJrT-iuQ5rZTL2mHIuEHDPcM4GikiIgBYoVIgWkfNoIy4a3MS3csGY4J5y_zBAWF1Lb2cCZc3NbzwW8oMKbk7m_rLE=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZP9YOyCjOHSvrrWjQT1W7w7uC6i7znxYH-ynonOr6l1sMGlTnPmWAlADgfZS2onHXGQJS2usMlx3-wXhu7EcqINZ2E_cF4OnafkPOPvZyOS1bbviuZN1Em9JVeaBuWe6TfcIPMSAAb0-VI=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZN-lrmJmFNrH69Y1Qb98gZPGeApJ0oEkxKYO20MPe9zAOOkaOc9MFyhK5d5u9sTkXo7YSu0mSbsQ6jHZu38jkqIF_kh9P7b0SSxREAxdBOi-4AX4MNozymnRrt-ucw3vwDLzABYFz-O3LXMOA=s800-w800-h600"],"website":"https://domainebousquet.com/","gmaps":"https://maps.google.com/?cid=9368766268843747134","phone":"+54 2622 48-0011","wa":"542622480011","hours":{"Seg":"9h–17h30","Ter":"9h–17h30","Qua":"9h–17h30","Qui":"9h–17h30","Sex":"9h–17h30","Sáb":"9h–17h30","Dom":"9h–17h30"}}]},{"label":"09/09","date":"Terça-feira, 9 set","title":"Atamisque + Transfer para Mendoza","sub":"Manhã tranquila no Vale e drive de 1h15 para o Huentala.","route":"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=place_id:ChIJ-Uf4joMvfJYR39FpzYpSv70&waypoints=place_id:ChIJQRmEjFPOfZYRiRPyAa16U4A&destination=place_id:ChIJ12QEfBcJfpYRIE9HkhFfVCI","waze":"https://waze.com/ul?ll=-33.2811902,-69.1433057&navigate=yes","stops":[{"t":"boutique","time":"10h – 11h30","name":"Bodega Atamisque","badge":"boutique","hrs":"Seg–Sáb 9h30–17h | ⛔ Fechado Domingos","st":"ok","stl":"ABERTO TER ✓","desc":"Casal francês, produção manual, baixo rendimento. Linhas Serbal e Catalpa muito elogiadas. Reserve com antecedência.","lat":-33.2811902,"lng":-69.1433057,"rating":4.5,"rcount":239,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZOylJD-g6Dwd-7gKzpy_Dyvg8RPPDlKzQ4r0c2io4YeOT-N5BnFCNjyL9A6iIzwvBqnGczRRnQzdnBNa2vsiJWx0e-konLSdJ4XSkWILonUj9FBPtJmldA2x0V4TeNPiTV_ZTOFi-7AwXcJwg=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZMoOYgXrEqr5VCw3RWOATVSbGsvc_p2VhGZZK5eOxKBwPoSjqbRKpVQFXoLcQ8zEUZfDZ85a8330UIw-4Ch3vErEnjiJVfSwYXQedV8oFtgUgRxzeHpQF1iYsEUU_a-8KIVPaui7PlQsIsFDQ=s800-w800-h600"],"website":"http://bodegaatamisque.com/","gmaps":"https://maps.google.com/?cid=9246869343402333065","phone":null,"wa":null,"hours":{"Seg":"9h30–17h","Ter":"9h30–17h","Qua":"9h30–17h","Qui":"9h30–17h","Sex":"9h30–17h","Sáb":"9h30–17h","Dom":"FECHADO"}},{"t":"hotel","time":"~13h30","name":"Huentala Hotel — Check-in","badge":"hotel","hrs":"24h (hotel)","st":"ok","stl":"ABERTO ✓","desc":"~1h15 pela Ruta 40. Plaza Independencia a 400m. Wine bar e restaurante Garden no hotel. Tarde livre.","lat":-32.8919487,"lng":-68.8381429,"rating":4.3,"rcount":2607,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZMB71Lb9ALT0XHOhYG76MrCm5kBepdd3iex09pXAY7QkKgLLEFhH-lOqqTAG7OZigT_XePMgmTcKLP5TXNxrMmmJSBckmgkmYo4AeHAihzv5WLkmT5_fdyJRCEJnClKDVQTfOvdzo7vWAO3UA=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZPV-twpOsE6yo9IN9R85t7_ujtmvhLocTZ3uEZz4wDZ2v_Rd4tWRn_SPpjdS9mON8JWVc-U7-mZqxx-91wfMQV4MysjitXvYZNJeYOZeUzSJLBSv4zJSR4f4aq7Z7feAO9kPnLO5K-xCEjrtMiHwL8iAw=s800-w800-h600"],"website":"http://www.huentala.com/","gmaps":"https://maps.google.com/?cid=2473706624406474528","phone":"+54 261 420-0766","wa":"542614200766","hours":{"Seg":"24h","Ter":"24h","Qua":"24h","Qui":"24h","Sex":"24h","Sáb":"24h","Dom":"24h"}}]}],"city":[{"label":"09/09","date":"Terça, 9 set — tarde","title":"Chegada ao Centro","sub":"Tarde livre e city walk a pé do Huentala.","route":null,"waze":null,"stops":[{"t":"hotel","time":"~13h30","name":"Huentala Hotel — Check-in","badge":"hotel","hrs":"24h","st":"ok","stl":"ABERTO ✓","desc":"400m da Plaza Independencia. Wine bar e restaurante Garden no hotel.","lat":-32.8919487,"lng":-68.8381429,"rating":4.3,"rcount":2607,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZMB71Lb9ALT0XHOhYG76MrCm5kBepdd3iex09pXAY7QkKgLLEFhH-lOqqTAG7OZigT_XePMgmTcKLP5TXNxrMmmJSBckmgkmYo4AeHAihzv5WLkmT5_fdyJRCEJnClKDVQTfOvdzo7vWAO3UA=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZPV-twpOsE6yo9IN9R85t7_ujtmvhLocTZ3uEZz4wDZ2v_Rd4tWRn_SPpjdS9mON8JWVc-U7-mZqxx-91wfMQV4MysjitXvYZNJeYOZeUzSJLBSv4zJSR4f4aq7Z7feAO9kPnLO5K-xCEjrtMiHwL8iAw=s800-w800-h600"],"website":"http://www.huentala.com/","gmaps":"https://maps.google.com/?cid=2473706624406474528","phone":"+54 261 420-0766","wa":"542614200766","hours":{"Seg":"24h","Ter":"24h","Qua":"24h","Qui":"24h","Sex":"24h","Sáb":"24h","Dom":"24h"}},{"t":"city","time":"16h – 19h","name":"Plaza Independencia + Paseo Sarmiento","badge":"cidade","hrs":"Aberto 24h ✓","st":"ok","stl":"ABERTO ✓","desc":"Praça central sombreada, fontes e museu subterrâneo. Calçadão Sarmiento: sorvete, cafés, artesanato. Tudo a 5 min a pé.","lat":-32.8895571,"lng":-68.8448326,"rating":4.5,"rcount":78036,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZMPix9W1m1gsrkcCSFwMtI9HVgaRmRy_Zsc_slXD4sCo8qjppLpGqqDiQ6ApA-0SKoR46jxpUUHr5rfNECzQnHdFqtgVP7KdRKWwV-HJDMNGNip3Yno0sdERoQY_Pvxw25n7eN80L17sjkBsmv4=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZM9S1D9zWZ35bhRyHKErb6jG7M81C-05YKmElOBLz5Iet6zFw0KKXFBMNLpvkqVA9tKXDb1ay4-OxdgC4FvKNWff5VPXrhN1yJzMSRyP5R-7tQ4IlX6EJNb0hGJScmlJSI0dwsEwxUhWFpVUHE=s800-w800-h600"],"website":null,"gmaps":"https://maps.google.com/?cid=5772793531346058017","phone":null,"wa":null,"hours":{"Seg":"24h","Ter":"24h","Qua":"24h","Qui":"24h","Sex":"24h","Sáb":"24h","Dom":"24h"}}]},{"label":"10/09","date":"Quarta-feira, 10 set","title":"Achaval Ferrer + Catena Zapata + Ruca Malén","sub":"As bodegas mais premiadas da Argentina. Rota eficiente até Agrelo.","route":"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=place_id:ChIJ12QEfBcJfpYRIE9HkhFfVCI&waypoints=place_id:ChIJ0yA7PlkJfpYRP19wzezqU3Y%7Cplace_id:ChIJz0pRHEUJfpYRbXWjkL0EwJ4&destination=place_id:ChIJ7UvxwD91fpYRjzaE7NMngZY","waze":"https://waze.com/ul?ll=-33.0565695,-68.9137383&navigate=yes","stops":[{"t":"boutique","time":"10h30 – 11h45","name":"Achaval Ferrer","badge":"boutique","hrs":"Seg–Sex 8h–17h | Sáb 9h30–12h30 | ⛔ Dom","st":"ok","stl":"ABERTO QUA ✓","desc":"Malbec de baixo rendimento com notas 95+ no Wine Enthusiast. Tour íntimo e personalizado.","lat":-33.0565695,"lng":-68.9137383,"rating":4.2,"rcount":204,"photos":["https://lh3.googleusercontent.com/places/ANXAkqEz_boFRRHRymnyD7UTmvRU5TRXR-cnHFd_KRao37FNciOLL1fbsLsnxWmEJBB0HAoxcmqOCXt03i5S0mjM1g-Ikv6fhRbiwKM=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZMzkK7ZFSZM-uwQU8h3Nu96x9grwp-N1Y8JvoqjBNHLuUmL1ZjpeFG_GkAbXWv0R3yZco3YSrd9yfytRcfkic1NNvQjW3EHEImv48TTi1h8DBFZ1Y7Het4JbmaoaSOtA8v3gicDtIbCSzim7g=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZNw1Uxp8UU8EOEXxoZmYBpppnuUV0hxk99mF1j9z8IOT8oNiNbZ43L7n8u-PQWeZQx2TgSBBm-k6FwRNLJIvz36T1BaMRN7fNlEjPljKrjeSYleTs0lARnAWxZtzlu-0ZhGrL4bl6fGANk9hj0=s800-w800-h600"],"website":"http://www.achaval-ferrer.com/","gmaps":"https://maps.google.com/?cid=8526416822322356031","phone":"+54 261 338-8699","wa":"542613388699","hours":{"Seg":"8h–17h","Ter":"8h–17h","Qua":"8h–17h","Qui":"8h–17h","Sex":"8h–17h","Sáb":"9h30–12h30","Dom":"FECHADO"}},{"t":"famous","time":"12h – 13h30","name":"Catena Zapata","badge":"famosa","hrs":"Ter–Sáb 9h–16h30 | ⛔ Seg e Dom","st":"ok","stl":"ABERTO QUA ✓","desc":"Pirâmide maia: símbolo máximo do Malbec argentino. 98 pontos Robert Parker. RESERVA OBRIGATÓRIA em catena-wines.com.","lat":-33.1640875,"lng":-68.9195863,"rating":4.5,"rcount":1460,"photos":["https://lh3.googleusercontent.com/places/ANXAkqFazdsRAX_V6jlZSeDWAp9mI6SbocbqzkLguZUfplnGJhKsYLrfZUq9UWZ11kuC4ssj21uo4mnTFxU_IKVbK-OcY0BWVGcWSIk=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZNu5G3LTo3UEELM0lkhQpl2kBDU4SJX6llMWywZAR3vv8-uj5K3nqIALR-Nyw7N7kY6QhvCYmbE6kNudmXbAZHu1srwSlNKHKwhLN3lNq2-Ou2drWCqWkEsPkdBYOMELX-3fI8uXsPT9jcWGJc=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZMmZ8n5CggdF_KRnfQU86yevWVGFqadbaPIguPoG_IBZj7Jo0Lyf9zYVLIR3ez7VcqPDwXyalT1CYylQgDDmga8Nt1DZu2g5dIXNoQbcFE_rtsZcsRBX0mMMHrac0j_WeZEs4XeQHhkE59VNw=s800-w700-h467"],"website":"http://www.catenazapata.com/","gmaps":"https://maps.google.com/?cid=11439148265743021421","phone":"+54 261 413-1124","wa":"542614131124","hours":{"Seg":"FECHADO","Ter":"9h–16h30","Qua":"9h–16h30","Qui":"9h–16h30","Sex":"9h–16h30","Sáb":"9h–16h30","Dom":"FECHADO"}},{"t":"lunch","time":"14h – 16h30","name":"Ruca Malén — Almoço Harmonizado","badge":"almoco","hrs":"Seg–Sáb 9h30–17h | ⛔ Dom","st":"ok","stl":"ABERTO QUA ✓","desc":"Almoço 4–6 etapas com vista para os Andes. Uma das experiências mais celebradas de Luján de Cuyo. ~$70–90 USD/pessoa.","lat":-33.0943708,"lng":-68.9290292,"rating":4.8,"rcount":909,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZPUsqSXaH3PKRTi93aQhOGKegy418jXb6S3oQooBF1erXotTGLtuA3X9BrtO4RgK8iln_S4T85CbYZ_IMbSTFS9J5wIlHKJfO8aMTCyA58JzluRJociU6PqpWdQ9lQ10BBfVq1BIxLCJmMB=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZOqTj0hDezHEbLqxArJWfb2AUPEy5Jlp5ho0LaKC9OKIRkhfo-1ENBYdaBlw4ATb1OOaj4L6AdoCIy_5C5vGQjhHparLdQQg9B1mTSk5ZA_Yr87KYUyUP7eBiLn2CHX2SlARROE9E0rJwqRsw=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZOT2vZQEQTpqQ0jYXqXMZ4mdfgC7bUqYIZuW0fb0s_4KdycTKgAK8dUOGr_tkrQWEJyxqeE9FTNtVwysIo282uwcMb3UBzRAtjp9hn4QcimXAX-7vZq8Vhlpofc9V6bboy19sXyBnTM0fqJWZu9i8g=s800-w800-h600"],"website":"http://www.bodegarucamalen.com/","gmaps":"https://maps.google.com/?cid=10844993168844535439","phone":"+54 9 261 454-1236","wa":"5492614541236","hours":{"Seg":"9h30–17h30","Ter":"9h30–17h","Qua":"9h30–17h","Qui":"9h30–17h","Sex":"9h30–17h","Sáb":"9h30–17h","Dom":"FECHADO"}}]},{"label":"11/09","date":"Quinta-feira, 11 set","title":"Durigutti + Viña Cobos + Fogón Lagarde","sub":"Top 11 do mundo, Paul Hobbs e o almoço Michelin no Lagarde.","route":"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=place_id:ChIJ12QEfBcJfpYRIE9HkhFfVCI&waypoints=place_id:ChIJhSoINwHhfZYRUts3vSr1vEo%7Cplace_id:ChIJ8e1i5kXffZYRQbbwRbbwXxo&destination=place_id:ChIJuQgTBAB1fpYRFTcuY_FU39A","waze":"https://waze.com/ul?ll=-33.0243561,-68.9514284&navigate=yes","stops":[{"t":"famous","time":"10h35 – 12h","name":"Durigutti Family Winemakers","badge":"famosa","hrs":"Todos os dias · Dom 10h–17h ✓","st":"ok","stl":"ABERTO QUI ✓","desc":"#11 World's Best Vineyards 2025. Tasting com a família Durigutti. Vista frontal para a Cordilheira nevada.","lat":-33.0243561,"lng":-68.9514284,"rating":4.7,"rcount":938,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZPx0OYz0IDD36sDaC16Y-PxZRkYYvvHpZkEHghMlfBciJFxT3xKz5LkI6NqcbPCU3ccfJ4nzMdEZQC4SnEbx6GwT3twf00kySgX3H6ycWS-EjZTM_bv3FKsZco-HHhAAQeUQss7LEKG015d-BYFhLGijA=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZPMNr46QFlOtfw2LtjE1TWRpwwadgqPWkSgiGLltev8BR7Pt2kvsTlUWra7WgIq15x1mbcy6xmuLoo811c45q_UWiHxfRsjgat2kESRUALldJP3I8W3wlKh_cU-sOoQgctXWMJiCHS5qAbBXb8=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZMoD0g3tIScFSvMz70eqRZJH0l8kq7fsmcNWVH_v85Xtm357SG70yq4FxK0u38SNZEBwJv35KSDihS5yiwxzwvGFMumn_DVWlwXYMvp3e0O0-eVfqkmaQmlyjmKqonrQaNcS0SJPEkaWCP70g=s800-w800-h600"],"website":"http://www.durigutti.com/","gmaps":"https://maps.google.com/?cid=5385448818340256594","phone":"+54 9 261 598-8521","wa":"5492615988521","hours":{"Seg":"9h–17h","Ter":"9h–17h","Qua":"9h–17h","Qui":"9h–17h","Sex":"9h–17h","Sáb":"9h30–17h","Dom":"10h–17h"}},{"t":"famous","time":"12h15 – 13h30","name":"Viña Cobos","badge":"famosa","hrs":"Seg–Sex 9h–17h | Sáb 10h–13h | ⛔ Dom","st":"ok","stl":"ABERTO QUI ✓","desc":"Paul Hobbs. Cobos Malbec 100 pontos. Tasting personalizado com bites no estilo Michelin.","lat":-33.0953799,"lng":-68.9263618,"rating":4.7,"rcount":333,"photos":["https://lh3.googleusercontent.com/places/ANXAkqGXt28ciMT5UytPQzb_fJPxBOBF2pBkT7mYGmIRV-m69zyP1F5PEgIuHw7L58HJvsFBkKdWSpj4sOrBeFQDB_Ztuen1bJbKSmg=s800-w758-h426","https://lh3.googleusercontent.com/place-photos/AJRVUZOvX3-9horJVq_KQzmAQEk3Jse4yZ5bvZ-IV8oZTfyagBpbJjKLNCYxFBwzcFJJA1apb91zxSZ85sOMTQIUegIf93jSrFhgqppApe-p0fYJ1FVNMsi65vU-aXv_xcNQv2u8rc8lwIOSkOOK=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZNoZWF-2JinWP7NJA6XtiJQpDpM4hWNQ496kyQHUy7GhJZUaRVnWV74cVEOIpUL4-3F8qgU6ziyMlbaasNlehLsTO7Aw9Wr9KxNDucS3Z4zjrqhRouM6PQAwHUyRtk6IjBX0XgPbLrhIltDdnZsMoQcnA=s800-w800-h600"],"website":"http://www.vinacobos.com/","gmaps":"https://maps.google.com/?cid=1900502233421755969","phone":"+54 261 321-1777","wa":"542613211777","hours":{"Seg":"9h–17h","Ter":"9h–17h","Qua":"9h–17h","Qui":"9h–17h","Sex":"9h–17h","Sáb":"10h–13h","Dom":"FECHADO"}},{"t":"lunch","time":"13h30 – 17h","name":"Fogón — Bodega Lagarde (Michelin)","badge":"almoco","hrs":"Todos os dias 12h30–18h | Sex–Sáb tb 20h–1h","st":"ok","stl":"ABERTO QUI ✓","desc":"Menu 7 etapas com grelhados no fogo aberto, jardim próprio. Michelin Recommended 2025. ~$90–150 USD/pessoa. Reserve em fogon-lagarde.meitre.com.","lat":-33.0232964,"lng":-68.8725888,"rating":4.7,"rcount":177,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZNIqEWTfz7HbW1QFVtbryJly-3TylOgkTo9GGZMcXuHpt509hXtOla8PLi4FUAFyh04lGkv9QKi1nXaVEJqFzPehrUi5EGGXOrd9CUAE6DcMmUeT1ZEvUP7NcNv7w2GmXzc8Udw1miD7Us15vo=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZOcPxB83uPFW-eucft-dhWT4es3vukBYeVOjKNG_uaep0zh1Du9biE6wjZUjQ0IVCFmR8vTEoWn8okdP7Ou4nwXvGTNBHR1KL93ScDi2KanYiw6U7oEXOI0iz0bJm8pyou34QqdY3xBcJCLuFa34ZEt=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZO0-VILDqU3vz5_ag8YIQPYiM9ZcvCGjGofT2ESmpS-61c79z_jxn3KOjzh-FkJGBLRawcp5peFyYmVeabjRS6afGyU6yrAHfp_fIA42LJWpEdBQQA-Idw4MpHIBaXW6MBTKQBL0M8cfLXd1xgclSSeYQ=s800-w800-h600"],"website":"https://lagarde.com.ar/fogon/","gmaps":"https://maps.google.com/?cid=15050841875423311637","phone":"+54 261 681-5961","wa":"542616815961","hours":{"Seg":"12h30–18h","Ter":"12h30–18h","Qua":"12h30–18h","Qui":"12h30–18h","Sex":"12h30–18h e 20h–1h","Sáb":"12h30–18h e 20h–1h","Dom":"12h30–18h"}}]},{"label":"12/09","date":"Sexta-feira, 12 set","title":"Carmelo Patti + A16 + Finca Minimal","sub":"As joias escondidas de Luján. Personalidade, orgânico e cabras.","route":"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=place_id:ChIJ12QEfBcJfpYRIE9HkhFfVCI&waypoints=place_id:ChIJV5JWeDF1fpYRDV2aHCKF874%7Cplace_id:ChIJMY2yXFzffZYRbke7stSLonI&destination=place_id:ChIJy-gb0RDffZYRbkYHbkqEpoo","waze":"https://waze.com/ul?ll=-33.0148034,-68.8708796&navigate=yes","stops":[{"t":"boutique","time":"11h – 12h30","name":"Carmelo Patti","badge":"boutique","hrs":"Seg–Sáb 11h–13h e 15h–17h | ⛔ Dom | ⚠️ SESTA!","st":"warn","stl":"ATENÇÃO: SESTA","desc":"Carmelo administra tudo sozinho. Vinho direto do barril. Cabernet Sauvignon legendário. Sem placa na fachada — porta discreta.","lat":-33.0148034,"lng":-68.8708796,"rating":4.9,"rcount":1002,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZO6bxO4jm1QETwpkvRAKy6ui_cBxLpeseUFdLjVAt3iG9dSu9O90iPd0nakzHknt6lY3x20IKZROUwWR2Bks8VRTAtnTsU8EiB7Pkb8PY1bMlAeAdjsFhaoJQWyxHf3rnCEs_1f5XmrMvU6Kg=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZMCpzuTbX91DjOJ-2aiEIh983HzrpnigyUvy6M9BM2zDPUZVuYGyYc6GIzPi6grRy_jpIgeZuRfLhafcxTyZF80qRZNv-K7jSqw6kjEePdimt7Qlhfc25MTZz9T-vqcaTiD-TfiZZ8C-qpUbmg=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZMxuYSj2fykpBl_BUyvSRSu4h9zLjqskwBk63oILIliNv7VmvMrwkqDVnNp2WAqB9a6a761Y9zUe0e4y6s17iPExXdJBfBW_J5RRytA6keAFxU3H9kzO-YPkE2VAG7qMod3eljSZDG3WURqCQ=s800-w800-h600"],"website":"https://www.bodegacarmelopatti.com/","gmaps":"https://maps.google.com/?cid=13759487668102257933","phone":null,"wa":null,"hours":{"Seg":"11h–13h e 15h–17h","Ter":"11h–13h e 15h–17h","Qua":"11h–13h e 15h–17h","Qui":"11h–13h e 15h–17h","Sex":"11h–13h e 15h–17h","Sáb":"11h–13h e 15h–17h","Dom":"FECHADO"}},{"t":"boutique","time":"12h45 – 13h45","name":"Bodega A16","badge":"boutique","hrs":"⚠️ Confirme: +54 9 261 653-8963","st":"nohr","stl":"CONFIRME ANTES","desc":"Tasting do barril. Destaque: vinho branco de uva Malbec — raridade absoluta. Sábados: sunset com DJ.","lat":-33.0917642,"lng":-68.9144161,"rating":3.9,"rcount":628,"photos":["https://lh3.googleusercontent.com/places/ANXAkqFYZqcMLOW6Fu7J7kSBbEIYHiP9O-J5T8ga0OQqngw2unLPRG1AawR56qugqjtr-t__44rCufW41onpJNVc0egxqbkLuyuQ0fQ=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZMjW8ghs7aVJdJa_nLjQTeQgOIbzBZ_5NMuMEX3Nl8w2ELVsrYyZfAounInTSid1x8s9ZtIZJTIHJh-LeoXBgOKHKqtMCNdKka2GFieUn4WK8zv4YptkEvk7cwEt8UMs3FDm8zswOadUNh6SA=s800-w800-h600"],"website":"http://www.a16sa.com.ar/","gmaps":"https://maps.google.com/?cid=8260318412198856558","phone":"+54 9 261 653-8963","wa":"5492616538963","hours":{"Seg":"—","Ter":"—","Qua":"—","Qui":"—","Sex":"—","Sáb":"—","Dom":"—"}},{"t":"lunch","time":"14h – 16h30","name":"Finca Minimal — Almoço Orgânico","badge":"almoco","hrs":"Seg e Qua–Dom 10h–18h | ⛔ FECHADA Terças","st":"ok","stl":"ABERTO SEX ✓","desc":"Mesa nos vinhedos, cozinha orgânica, kids menu, cabras e galinhas. RESERVA OBRIGATÓRIA: WhatsApp +54 261 748-8633.","lat":-33.0810773,"lng":-68.9129819,"rating":4.8,"rcount":200,"photos":["https://lh3.googleusercontent.com/places/ANXAkqF9rLSWdcImBdjduKaDyaDvUFfSpihMMH-QVKWXTh7BClxLtiv1DtDTmoFqJM8w84UN9nlg6OZcr2toAepg5BgGtYaizw9E33o=s800-w800-h600","https://lh3.googleusercontent.com/places/ANXAkqFq5jQPscmP5seaxYEKu5eG-ZIBkJwYEDV9vK6BnWXoeN0gJO2N1ZxIuo8kc0iFNS5g8IEnYEFqYwMQRfb1xS1JGAfCCQoJPm4=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZN5p9UMGxFeQxVFK9UYOiGOeW4VrKAFd8m5rztzxWPfarWUS9axVRamRmE6vgW0QeCNmGaAzLLNnnGBMJBk72Wdmm_hwpR_E1X-u8hFuW1xVkAWHTL6KliY_UYvbjUV45FLn0i_HCNgQZonfCxchKwvxw=s800-w800-h600"],"website":"http://www.instagram.com/fincaminimal","gmaps":"https://maps.google.com/?cid=9990818278576440942","phone":"+54 261 748-8633","wa":"542617488633","hours":{"Seg":"10h–17h","Ter":"FECHADO","Qua":"10h–17h","Qui":"10h–17h","Sex":"10h–18h","Sáb":"10h–18h","Dom":"10h–18h"}}]},{"label":"13/09","date":"Sábado, 13 set","title":"Weinert + Clos de Chacras + Chacras de Coria","sub":"Weinert fecha às 14h no sábado — chegue às 10h! Tarde no vilarejo.","route":"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=place_id:ChIJ12QEfBcJfpYRIE9HkhFfVCI&waypoints=place_id:ChIJ8VDU3uQLfpYR3u8UQCT0IOk&destination=place_id:ChIJsXVM1fMKfpYRCehaQzc0Kvc","waze":"https://waze.com/ul?ll=-32.9835884,-68.8599048&navigate=yes","stops":[{"t":"boutique","time":"10h – 11h30","name":"Bodega y Cavas de Weinert","badge":"boutique","hrs":"Seg–Sex 9h–17h | ⚠️ Sáb 10h–14h | ⛔ Dom","st":"warn","stl":"SÁB ATÉ 14H!","desc":"Villa espanhola histórica, barris de carvalho gigantes e cave centenária. Degustação de vinhos com 10–30 anos de idade. Chegue às 10h.","lat":-32.9835884,"lng":-68.8599048,"rating":4.9,"rcount":178,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZMB9oUN32ZO23Ce5DwJT0qR0xtfYzKCEY_et_24xYlcODB9WlASRrSJ-gQ1MYnv2IUOitxowiJIzF8XHMHlLEMUKr6lFVQGsTOp2NiMa9n_qIwQ-LsnSw5wdMtC77HlIWzLEHgoLGla5eL-2Y8=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZOl_4eb7vO4xfmht-NKD6wOEr2jUlFWetp6jUWqkbnYhhDIcr7W5cfhDplg3U-8dWuCQkM32JHDHK_1tHhdqf_n_VgH3hnuXarFDPinCKGkHaPQGYXO0L9yh7oxU0W_Rj23WpnFJAzh79cx_IE=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZMdKO9PHH_b0xDnGPtaZlxgOoNhGj0ey4-GDvSZUhpho3HsAORE7b5z5fd1JOFSGtlmBpVQ6-vlA4dor-_zcB3A6hma81IhLB34MMNHZTmfN1s2TtHK6HRKzfVU_H_JTx6ikyeovi7bhkA3XR4=s800-w800-h600"],"website":"http://www.bodegaweinert.com/","gmaps":"https://maps.google.com/?cid=16798695046623064030","phone":"+54 261 244-6669","wa":"542612446669","hours":{"Seg":"9h–17h","Ter":"9h–17h","Qua":"9h–17h","Qui":"9h–17h","Sex":"9h–17h","Sáb":"10h–14h ⚠️","Dom":"FECHADO"}},{"t":"boutique","time":"12h – 15h","name":"Clos de Chacras — Bodega + Almoço","badge":"boutique","hrs":"Qua–Dom 10h–18h | ⛔ Seg e Ter","st":"ok","stl":"ABERTO SÁB ✓","desc":"Casarão histórico suíço do séc. XIX. Tour bilingue + almoço 4 ou 7 etapas com kids menu disponível. Queijos artesanais e azeites da casa.","lat":-32.9844108,"lng":-68.8771259,"rating":4.5,"rcount":1751,"photos":["https://lh3.googleusercontent.com/places/ANXAkqFCiT_hVG3H0Lh-nAOcSDkWA9XlD9oe9OyDlMpy62BiokjPSZkGTA-wE5xrMFrkiK9Mi_LYVMYwwxo9RGS5DQ7heDW3oM2PG34=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZObt01S0hIfILoiIeAuXZo5AUB9dzS5xsytkgM0L0-zufVNpcFE_eis2YuWtaSgFq-W3mPLIncDashfRih6rRW9lJ1546g3vVyToXOB_WpCIEljJ75tGrLBJZngWPp080Pu6zBwdvIujSwuz7Lrc_-8RQ=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZP3AvkLFRlPprXztJz0bawmjeV2aElOxuwrFYd0zplKh5NJsoqxEC5zzJAE9iqIaJHrQPMfvBa_bHWGFKMQ08C6EMYf39m8qAmLezDu6Suhl03LKcFsiuB__zDcuNEKs41kwiG5aaeU38992g=s800-w800-h600"],"website":"http://www.closdechacras.com.ar/","gmaps":"https://maps.google.com/?cid=17810105088347924489","phone":"+54 261 369-0850","wa":"542613690850","hours":{"Seg":"FECHADO","Ter":"FECHADO","Qua":"10h–18h","Qui":"10h–18h","Sex":"10h–18h","Sáb":"10h–18h","Dom":"10h–18h"}},{"t":"city","time":"15h30 – 17h","name":"Chacras de Coria — Praça + Gelato","badge":"cidade","hrs":"Sempre aberto","st":"ok","stl":"ABERTO ✓","desc":"Vilarejo colonial stroller-friendly. Praça, Igreja N.S. do Perpétuo Socorro. Helados de Chacras: melhor gelato artesanal da região.","lat":-32.9756,"lng":-68.8741,"rating":null,"rcount":null,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZPNN-3vBvxyQEsG0liyU3jnA5SS_orNd-7D0T4UlJt3VeexPxxMnUHMhxNawo8bfnLz4AiiAQuxBryNQ_-QjAUrvfQxTQghl11PCTxTcyPxbJ1Ut0oiGooCcqN8alywdgw-x8NTOCmbNqg3LCPCXA-uSw=s800-w800-h600"],"website":null,"gmaps":null,"phone":null,"wa":null,"hours":{"Seg":"24h","Ter":"24h","Qua":"24h","Qui":"24h","Sex":"24h","Sáb":"24h","Dom":"24h"}}]},{"label":"14/09","date":"Domingo, 14 set","title":"Potrerillos + Alta Vista + Parque San Martín","sub":"Andes de perto, vinhedo de domingo (aberto!) e parque para os bebês.","route":"https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=place_id:ChIJ12QEfBcJfpYRIE9HkhFfVCI&waypoints=place_id:ChIJVQQXWKnvfZYRJUcb0-ldsLE%7Cplace_id:ChIJny8B5MIKfpYRg0380_kF_gs&destination=place_id:ChIJf5QZdRgmo5URiQK7IWNggW0","waze":"https://waze.com/ul?ll=-32.9562615,-69.1877543&navigate=yes","stops":[{"t":"mountain","time":"9h – 12h","name":"Lago Potrerillos — Andes Nevados","badge":"montanha","hrs":"Área pública — sem horário fixo","st":"ok","stl":"ABERTO ✓","desc":"Lago turquesa a 1.350m. Andes cobertos de neve em setembro. Stroller-friendly e seguro para os bebês.","lat":-32.9562615,"lng":-69.1877543,"rating":4.8,"rcount":256,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZN7XEFDu_sTi7y8NhzDskYA1jt278E5S4QzffoXJ-LxTlWq1tRhFJ2cWK5nFNV4XUEOi6oC1cV06tvZREdnLyb_XxkuQEAPwLO4OFmqKlfolmmJhdK5pReJxoVWa_Sspa9Joa0sZT2PKfiyag=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZNna5YXB_QTQuFY04AagcwcckyWdYh8RL9xQ1q42ejpu4cJw6fksRyQOBZK8Jq6aS25QCtJvrXIc7A80lMCmQw7ffgqNBYx_uUt4ObuflN_PJbnFVOWsyM2DpQbMMpz6Td3Wer-mOL1CUK_2S_QTVvecw=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZOpOpSfYhoeyc5uTEL7_4u631lRVM2gM02U_gZdew5SBDFwVF43Xuct7xgHhcmlgwLeZHd66s4WWBJ9DJ0iZSlwg7SncRJ0XoGpKGyFJDqFC9jQOaD5-wMOWGoV72-FcryeKSOVE7zdRcGCo10=s800-w800-h600"],"website":null,"gmaps":"https://maps.google.com/?cid=12803836999464863525","phone":null,"wa":null,"hours":{"Seg":"24h","Ter":"24h","Qua":"24h","Qui":"24h","Sex":"24h","Sáb":"24h","Dom":"24h"}},{"t":"famous","time":"13h30 – 15h30","name":"Alta Vista Wines — Tour + Almoço","badge":"famosa","hrs":"Todos os dias 9h–18h ✓","st":"ok","stl":"ABERTO DOM ✓","desc":"Savoir-faire francês com terroir argentino. Cave histórica com túneis, jardins deslumbrantes. Picnic/charcuteria ao ar livre — ótima opção dominical.","lat":-33.0026271,"lng":-68.874165,"rating":4.6,"rcount":1045,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZONPpcPqwwAgUFMqOglEOuKu9zCwG9ycUriY8y00_4w2WM4Ct30f9liuFeolA33PlJK4e5Iz4vDbuQYYPf3s-UGYw15xEdfh1RsTw1Nc78BogH7Whws5ie4075LwlIHp-NEj-NgZiup39Bimw=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZPz-kjoETfNb0NE88UhLhA9OWrYTZ6YOgm1norTJi3V0KVZuF_DN_d0QPe7ZWHJZvD-lGm3N7o-pGLnIN4Ek4Ak08VcnLaOJ0SH9x7k4_0S2II8Insxd9xe-VCTk4YJPV0sYMOCvM60x6vYIA=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZN_ms0VWjx2-yggSFAqb5i5ncRZk5EKc_LehJaC7hvwAVghc0kNdUA9R99B_85GyyACrtE-Tlv5rfaqojIbL7LWfUsL2i5C2AsHihnproC5eJy84agN-_-DyHOqwbTwzL10gWFif6vAaRzhCQ=s800-w800-h600"],"website":"http://www.altavistawines.com/","gmaps":"https://maps.google.com/?cid=864134749063236995","phone":"+54 261 496-4684","wa":"542614964684","hours":{"Seg":"9h–18h","Ter":"9h–18h","Qua":"9h–18h","Qui":"9h–18h","Sex":"9h–18h","Sáb":"9h–18h","Dom":"9h–18h"}},{"t":"city","time":"16h30 – 18h","name":"Parque San Martín + Cerro de la Gloria","badge":"cidade","hrs":"Aberto 24h ✓","st":"ok","stl":"ABERTO ✓","desc":"400ha stroller-friendly. Subida ao Cerro de la Gloria: mirante 360° com os Andes ao fundo. Fontes, jardins de rosas, playgrounds.","lat":-32.8898095,"lng":-68.8700868,"rating":4.8,"rcount":61345,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZPNN-3vBvxyQEsG0liyU3jnA5SS_orNd-7D0T4UlJt3VeexPxxMnUHMhxNawo8bfnLz4AiiAQuxBryNQ_-QjAUrvfQxTQghl11PCTxTcyPxbJ1Ut0oiGooCcqN8alywdgw-x8NTOCmbNqg3LCPCXA-uSw=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZNqx4rFGJBb1riZo2EiuRYdFaDSRuq6Z222-2HaBfoap9Hssp0OHVhks7Xj2w3X37t34ey9Bjpg3RUFf-SaA4vUB4coaA3eNkhPwA9kRuOcMCfuiAkoeQLLZxmJdNG3-YXRnhGmAOTTXEzqKw=s800-w800-h600","https://lh3.googleusercontent.com/place-photos/AJRVUZN_p_kXe3B4Pj-vf1srk8OmwveePhhnXP9WPo1SPZlLvBGyOoYqw6cO4VTBM8V5eSgW0GJB4yayvzwblnzm6H1aYQzW3X1sDhcdM3NeUoDMeeoo3-q7YBKn83rLMA9QKWBVxHZrSEwZRNJJ=s800-w800-h600"],"website":null,"gmaps":"https://maps.google.com/?cid=7890694001013752457","phone":null,"wa":null,"hours":{"Seg":"24h","Ter":"24h","Qua":"24h","Qui":"24h","Sex":"24h","Sáb":"24h","Dom":"24h"}}]},{"label":"15/09","date":"Segunda, 15 set — PARTIDA","title":"Check-out e Embarque","sub":"Café, compras rápidas e transfer ao aeroporto El Plumerillo.","route":null,"waze":null,"stops":[{"t":"hotel","time":"9h – 12h","name":"Huentala — Check-out + Paseo Sarmiento","badge":"hotel","hrs":"24h","st":"ok","stl":"ABERTO ✓","desc":"Café da manhã incluso. Compras no Sarmiento (5 min a pé): vinhos, doce de leite, empanadas. Transfer ao aeroporto (~20 min).","lat":-32.8919487,"lng":-68.8381429,"rating":4.3,"rcount":2607,"photos":["https://lh3.googleusercontent.com/place-photos/AJRVUZMB71Lb9ALT0XHOhYG76MrCm5kBepdd3iex09pXAY7QkKgLLEFhH-lOqqTAG7OZigT_XePMgmTcKLP5TXNxrMmmJSBckmgkmYo4AeHAihzv5WLkmT5_fdyJRCEJnClKDVQTfOvdzo7vWAO3UA=s800-w800-h600"],"website":"http://www.huentala.com/","gmaps":"https://maps.google.com/?cid=2473706624406474528","phone":"+54 261 420-0766","wa":"542614200766","hours":{"Seg":"24h","Ter":"24h","Qua":"24h","Qui":"24h","Sex":"24h","Sáb":"24h","Dom":"24h"}}]}]};
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+const TC={hotel:"#C06060",famous:"#A090D4",boutique:"#5AAF78",lunch:"#CF8050",almoco:"#CF8050",city:"#909090",cidade:"#909090",mountain:"#6898C0",montanha:"#6898C0"};
+const BC={famosa:"b-famous",boutique:"b-boutique",almoco:"b-almoco",cidade:"b-cidade",montanha:"b-montanha",hotel:"b-hotel"};
+const SC={ok:"s-ok",warn:"s-warn",nohr:"s-nohr"};
+
+// Escape & in URLs for HTML attribute context
+function eu(u){return u?u.replace(/&/g,"&amp;"):"";}
+// Escape text for HTML
+function et(s){return s?String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"):"";}
+
+// Brand logo SVGs
+const LOGO={
+  gm:`<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`,
+  wz:`<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.997 0C5.378 0 0 5.381 0 12.003 0 18.625 5.379 24 11.997 24 18.617 24 24 18.625 24 12.003 24 5.381 18.617 0 11.997 0zm.6 4.56c1.73 0 3.15 1.42 3.15 3.15 0 1.736-1.42 3.146-3.15 3.146-1.73 0-3.153-1.41-3.153-3.146C9.444 5.98 10.867 4.56 12.597 4.56zm-4.8 1.59c.585 0 1.06.474 1.06 1.056 0 .587-.475 1.06-1.06 1.06-.585 0-1.057-.473-1.057-1.06 0-.582.472-1.056 1.057-1.056zm9.59 0c.585 0 1.06.474 1.06 1.056 0 .587-.475 1.06-1.06 1.06-.585 0-1.057-.473-1.057-1.06 0-.582.472-1.056 1.057-1.056zm-4.79 5.052c1.758 0 3.39.607 4.642 1.616-.18.192-.35.39-.508.596-1.052-1.018-2.483-1.646-4.062-1.646-.944 0-1.83.228-2.614.627l-.082.042a6.108 6.108 0 0 0-.46-.597 6.086 6.086 0 0 1 3.084-.638zm-6.43 2.56a.848.848 0 0 1 .17-.004c.277.016.748.09 1.206.284l.106.045a4.87 4.87 0 0 0 1.088.3 4.954 4.954 0 0 0 .41.028 4.952 4.952 0 0 0 .48-.023c.37-.034.746-.127 1.106-.302l.103-.05c.465-.216.914-.317 1.255-.326h.077c.332 0 .716.076 1.054.272l.18.103-.194.178c-.57.535-1.012 1.226-1.225 1.987l-.03.105-.11-.002c-.865-.018-1.62.179-2.196.56-.575.382-.98.946-1.115 1.598l-.017.086-.086-.017a2.68 2.68 0 0 1-1.596-1.047l-.032-.05.021-.055c.152-.403.18-.856.086-1.286l-.023-.103.107-.013c.22-.027.433-.055.583-.124.141-.067.183-.152.169-.27-.02-.168-.105-.38-.21-.594-.082-.163-.17-.32-.249-.46l-.048-.084.054-.078c.099-.14.246-.318.4-.496.104-.118.207-.237.298-.352z"/></svg>`,
+  wa:`<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>`,
+  ap:`<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>`
+};
+
+// Hotels — departure point for each phase
+const HOTELS={
+  uco:{lat:-33.5381164,lng:-69.0210418},
+  city:{lat:-32.8919487,lng:-68.8381429}
+};
+
+// Leaflet interactive map with hotel as route origin
+let _map=null;
+function initMap(stops,phase){
+  const el=document.getElementById("day-map");
+  if(!el) return;
+  if(_map){_map.remove();_map=null;}
+  const pts=stops.filter(s=>s.lat&&s.lng);
+  if(!pts.length){el.parentElement.style.display="none";return;}
+  el.parentElement.style.display="";
+
+  const hotel=HOTELS[phase]||HOTELS.city;
+  const isHotelFirst=pts.length>0&&Math.abs(pts[0].lat-hotel.lat)<0.005&&Math.abs(pts[0].lng-hotel.lng)<0.005;
+  const routePts=isHotelFirst?pts:[hotel,...pts];
+
+  _map=L.map(el,{zoomControl:false,attributionControl:false,scrollWheelZoom:false,dragging:true});
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:19}).addTo(_map);
+
+  if(!isHotelFirst){
+    const hi=L.divIcon({
+      html:`<div style="background:#fff;width:24px;height:24px;border-radius:50%;border:2px solid #C49A4A;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.6)">🏨</div>`,
+      className:"",iconSize:[24,24],iconAnchor:[12,12]
+    });
+    L.marker([hotel.lat,hotel.lng],{icon:hi}).addTo(_map);
+  }
+
+  const PIN_COLORS=["#C49A4A","#A090D4","#5AAF78","#CF8050","#6898C0"];
+  pts.forEach((s,i)=>{
+    const c=PIN_COLORS[i%PIN_COLORS.length];
+    const icon=L.divIcon({
+      html:`<div style="background:${c};width:26px;height:26px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0D0B09;box-shadow:0 2px 6px rgba(0,0,0,.5)">${i+1}</div>`,
+      className:"",iconSize:[26,26],iconAnchor:[13,13]
+    });
+    L.marker([s.lat,s.lng],{icon}).addTo(_map);
+  });
+
+  if(routePts.length>1) L.polyline(routePts.map(s=>[s.lat,s.lng]),{color:"#C49A4A",weight:2.5,opacity:.75,dashArray:"6,4"}).addTo(_map);
+  const bounds=L.latLngBounds(routePts.map(s=>[s.lat,s.lng]));
+  _map.fitBounds(bounds,{padding:[30,30]});
+}
+
+// Time of day section label
+function timeSection(t){
+  if(!t) return null;
+  const m=t.match(/~?(\d+)h/);
+  if(!m) return null;
+  const h=parseInt(m[1]);
+  return h>=18?"Noite":h>=12?"Tarde":"Manhã";
+}
+
+let ph="uco", di=0;
+
+// ─── tap vs scroll detection ────────────────────────────────────────────────
+// touchmove sets _moved=true; touchstart resets it.
+// All click handlers check _moved before acting, so scroll never triggers an action.
+let _moved=false;
+document.addEventListener("touchstart",()=>{_moved=false;},{passive:true});
+document.addEventListener("touchmove",()=>{_moved=true;},{passive:true});
+function onTap(el,fn){
+  el.addEventListener("click",function(e){if(!_moved)fn.call(this,e);});
+}
+
+// ─── build day nav ─────────────────────────────────────────────────────────
+function buildNav(){
+  const days=DATA[ph];
+  document.getElementById("dnav").innerHTML=days.map((d,i)=>
+    `<button class="dbtn${i===di?" a":""}" data-i="${i}">${d.label}</button>`
+  ).join("");
+  document.querySelectorAll(".dbtn").forEach(b=>{
+    onTap(b,function(){setDay(parseInt(this.dataset.i));});
+  });
+  // scroll active into view
+  const active=document.querySelector(".dbtn.a");
+  if(active) active.scrollIntoView({behavior:"smooth",block:"nearest",inline:"center"});
+}
+
+// ─── render day ────────────────────────────────────────────────────────────
+function renderDay(){
+  const day=DATA[ph][di];
+  const cont=document.getElementById("content");
+
+  let navH="";
+  if(day.route||day.waze){
+    navH=`<div class="navbtns">`;
+    if(day.route) navH+=`<a class="nbtn nbtn-gm" href="${eu(day.route)}">${LOGO.gm} Google Maps</a>`;
+    if(day.waze)  navH+=`<a class="nbtn nbtn-wz" href="${eu(day.waze)}">${LOGO.wz} Waze</a>`;
+    if(day.stops&&day.stops[0]&&day.stops[0].lat){
+      const s0=day.stops[0];
+      navH+=`<a class="nbtn nbtn-ap" href="https://maps.apple.com/?daddr=${s0.lat},${s0.lng}&amp;dirflg=d">${LOGO.ap} Apple Maps</a>`;
+    }
+    navH+=`</div>`;
+  }
+
+  const hasMapPts=(day.stops||[]).some(s=>s.lat&&s.lng);
+  const mapH=`<div class="map-wrap"${hasMapPts?"":" style=\"display:none\""}><div id="day-map"></div><div class="map-fade"></div></div>`;
+
+  // Group stops by time of day
+  const stops=day.stops||[];
+  const secMap={};const secOrder=[];
+  stops.forEach((s,i)=>{
+    const sec=timeSection(s.time)||"Todo o dia";
+    if(!secMap[sec]){secMap[sec]=[];secOrder.push(sec);}
+    secMap[sec].push({s,i});
+  });
+
+  let stopsH='<div class="stops-list">';
+  secOrder.forEach(sec=>{
+    stopsH+=`<div class="sec-hdr">${sec}</div>`;
+    const items=secMap[sec];
+    items.forEach(({s,i},idx)=>{
+      const isLast=idx===items.length-1;
+      const bk=BC[s.badge]||"b-cidade";
+      const sk=s.st?SC[s.st]:"";
+      const ph0=s.photos&&s.photos[0]?s.photos[0]:"";
+      const dot=TC[s.t]||TC[s.badge]||"#909090";
+      stopsH+=`
+        <div class="stop-row${isLast?" stop-last":""}">
+          <div class="stop-tl">
+            <div class="stop-dot" style="background:${dot}"></div>
+            <div class="stop-line" style="background:${dot}33"></div>
+          </div>
+          <button class="stop-card" data-idx="${i}">
+            <div class="stop-info">
+              <div class="stop-meta">
+                ${s.time?`<span class="stop-time">${et(s.time)}</span>`:""}
+                ${s.badge?`<span class="badge ${bk}">${et(s.badge)}</span>`:""}
+                ${s.st?`<span class="status ${sk}">${et(s.stl)}</span>`:""}
+              </div>
+              <div class="stop-name">${et(s.name)}</div>
+              ${s.hrs?`<div class="stop-hrs">🕐 ${et(s.hrs)}</div>`:""}
+              ${s.desc?`<div class="stop-desc">${et(s.desc)}</div>`:""}
+              <div class="stop-caret">ver detalhes ›</div>
+            </div>
+            ${ph0?`<img class="stop-thumb" src="${ph0}" alt="" loading="lazy" onload="this.style.opacity=1" style="opacity:0;transition:opacity .3s">`:""}
+          </button>
+        </div>`;
+    });
+  });
+  stopsH+='</div>';
+
+  cont.innerHTML=`
+    <div class="dhdr">
+      <div class="d-date">${et(day.date)}</div>
+      <div class="d-title">${et(day.title)}</div>
+      <div class="d-sub">${et(day.sub)}</div>
+      ${navH}
+    </div>
+    ${mapH}
+    ${stopsH}`;
+
+  cont.querySelectorAll(".stop-card").forEach(btn=>{
+    onTap(btn,function(){openSheet(parseInt(this.dataset.idx));});
+  });
+
+  document.getElementById("main").scrollTo({top:0,behavior:"instant"});
+  buildNav();
+  initMap(day.stops||[],ph);
+}
+
+// ─── open sheet ────────────────────────────────────────────────────────────
+function openSheet(idx){
+  const s=DATA[ph][di].stops[idx];
+
+  // photos - scroll snap slides
+  const photos=s.photos||[];
+  document.getElementById("phScroll").innerHTML=photos.length
+    ? photos.map((u,i)=>`
+        <div class="ph-slide">
+          <img src="${u}" alt="" loading="eager">
+          ${photos.length>1?`<div class="ph-dots">${photos.map((_,j)=>`<div class="ph-dot${j===i?" a":""}"></div>`).join("")}</div>`:""}
+        </div>`).join("")
+    : "";
+
+  // update dots on photo scroll
+  const ps=document.getElementById("phScroll");
+  ps.scrollLeft=0;
+  if(photos.length>1){
+    ps.onscroll=function(){
+      const ci=Math.round(ps.scrollLeft/ps.clientWidth);
+      ps.querySelectorAll(".ph-dot").forEach((d,j)=>d.classList.toggle("a",j===ci));
+    };
+  }
+
+  // name
+  document.getElementById("shName").textContent=s.name||"";
+
+  // badges
+  let bdg="";
+  if(s.badge) bdg+=`<span class="badge ${BC[s.badge]||"b-cidade"}">${et(s.badge)}</span>`;
+  if(s.st)    bdg+=`<span class="status ${SC[s.st]||""}">${et(s.stl)}</span>`;
+  if(s.rating) bdg+=`<span class="sh-rating">⭐ ${s.rating} <span style="color:var(--t3)">(${Number(s.rcount||0).toLocaleString("pt-BR")})</span></span>`;
+  document.getElementById("shBadges").innerHTML=bdg;
+
+  // hours
+  const hSect=document.getElementById("shHrsSect");
+  if(s.hours){
+    hSect.style.display="";
+    document.getElementById("shHrs").innerHTML=
+      Object.entries(s.hours).map(([d,v])=>
+        `<span class="h-day">${et(d)}</span><span class="h-val${v==="FECHADO"?" cl":""}">${et(v)}</span>`
+      ).join("");
+  } else { hSect.style.display="none"; }
+
+  // desc
+  document.getElementById("shDesc").textContent=s.desc||"";
+
+  // action buttons — use eu() for all URLs, NO target=_blank (iOS deep links need direct navigation)
+  const wa=s.wa?(s.wa.replace(/\s+/g,"")):"";
+  const waMsg=encodeURIComponent("Olá! Gostaria de fazer uma reserva.");
+  let acts="";
+
+  if(s.website) acts+=`<a class="ab site full" href="${eu(s.website)}">🌐 Site oficial</a>`;
+
+  if(s.gmaps)   acts+=`<a class="ab ap" href="${eu(s.gmaps)}">${LOGO.gm} Google Maps</a>`;
+  if(s.lat)     acts+=`<a class="ab ap" href="https://maps.apple.com/?daddr=${s.lat},${s.lng}&amp;dirflg=d">${LOGO.ap} Apple Maps</a>`;
+  if(s.lat)     acts+=`<a class="ab wz" href="https://waze.com/ul?ll=${s.lat},${s.lng}&amp;navigate=yes">${LOGO.wz} Waze</a>`;
+  if(wa)        acts+=`<a class="ab wa" href="https://wa.me/${wa}?text=${waMsg}">${LOGO.wa} WhatsApp</a>`;
+  else if(s.phone) acts+=`<a class="ab ap full" href="tel:${eu(s.phone)}">📞 ${et(s.phone)}</a>`;
+
+  document.getElementById("shActs").innerHTML=acts;
+
+  // freeze body scroll (iOS)
+  const sy=window.scrollY||document.documentElement.scrollTop;
+  document.body.style.position="fixed";
+  document.body.style.top=`-${sy}px`;
+  document.body.style.width="100%";
+
+  document.getElementById("sheet").classList.add("open");
+  document.getElementById("ov").classList.add("open");
+}
+
+// ─── close sheet ───────────────────────────────────────────────────────────
+function closeSheet(){
+  document.getElementById("sheet").classList.remove("open");
+  document.getElementById("ov").classList.remove("open");
+  const top=parseInt(document.body.style.top||"0")*-1;
+  document.body.style.position="";
+  document.body.style.top="";
+  document.body.style.width="";
+  window.scrollTo(0,top);
+}
+
+// close handlers — click only (sheet doesn't scroll, no onTap needed)
+["shClose","shHandle","ov"].forEach(id=>{
+  document.getElementById(id).addEventListener("click",closeSheet);
+});
+
+// ─── phase switch ──────────────────────────────────────────────────────────
+function setPhase(p){
+  ph=p; di=0;
+  document.getElementById("tab-uco").classList.toggle("a",p==="uco");
+  document.getElementById("tab-city").classList.toggle("a",p==="city");
+  renderDay();
+}
+["tab-uco","tab-city"].forEach(id=>{
+  const p=id==="tab-uco"?"uco":"city";
+  onTap(document.getElementById(id),()=>setPhase(p));
+});
+
+function setDay(i){ di=i; renderDay(); }
+
+// ─── init ──────────────────────────────────────────────────────────────────
+renderDay();
+</script>
+</body>
+</html>
