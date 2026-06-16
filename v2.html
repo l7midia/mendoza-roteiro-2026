@@ -470,11 +470,11 @@ function openSheet(idx){
 
   // photos - scroll snap slides
   const photos=s.photos||[];
-  const _ph=photos;
+  window._lbPhotos=photos;
   document.getElementById("phScroll").innerHTML=photos.length
     ? photos.map((u,i)=>`
         <div class="ph-slide">
-          <img src="${u}" alt="" loading="eager" style="cursor:pointer" onclick="openLightbox(${JSON.stringify(_ph)},${i})" onerror="this.closest('.ph-slide').style.display='none'">
+          <img src="${u}" alt="" loading="eager" style="cursor:pointer" onclick="openLightbox(window._lbPhotos,${i})" onerror="this.closest('.ph-slide').style.display='none'">
           ${photos.length>1?`<div class="ph-dots">${photos.map((_,j)=>`<div class="ph-dot${j===i?" a":""}"></div>`).join("")}</div>`:""}
         </div>`).join("")
     : "";
