@@ -497,7 +497,7 @@ function openSheet(idx){
   const waMsg=encodeURIComponent("Olá! Gostaria de fazer uma reserva.");
   let acts="";
 
-  if(s.website) acts+=`<a class="ab site full" href="${eu(s.website)}">🌐 Site oficial</a>`;
+  if(s.website) acts+=`<a class="ab site" href="${eu(s.website)}">🌐 Site oficial</a>`;
 
   if(s.gmaps)   acts+=`<a class="ab ap" href="${eu(s.gmaps)}">${LOGO.gm} Google Maps</a>`;
   if(s.lat)     acts+=`<a class="ab wz" href="https://waze.com/ul?ll=${s.lat},${s.lng}&amp;navigate=yes">${LOGO.wz} Waze</a>`;
