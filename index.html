@@ -98,9 +98,20 @@ body{color:var(--cr);font-family:"Plus Jakarta Sans",-apple-system,"Helvetica Ne
 .ph-scroll::-webkit-scrollbar{display:none}
 .ph-slide{flex:0 0 100%;scroll-snap-align:start;position:relative}
 .ph-slide img{width:100%;height:220px;object-fit:cover;display:block;background:var(--bg3)}
-.ph-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px}
+.ph-dots-container{display:flex;justify-content:center;gap:5px;padding:8px 0;background:rgba(0,0,0,.15)}
 .ph-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.5);transition:background .2s}
 .ph-dot.a{background:#fff}
+/* lightbox */
+.lb{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.93);display:none;flex-direction:column;align-items:center;justify-content:center;touch-action:none}
+.lb.open{display:flex}
+.lb-img{max-width:100%;max-height:calc(100dvh - 80px);object-fit:contain;display:block;user-select:none;-webkit-user-drag:none}
+.lb-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10}
+.lb-close:hover{background:rgba(255,255,255,.25)}
+.lb-arrow{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;transition:background .2s}
+.lb-arrow:hover{background:rgba(255,255,255,.3)}
+.lb-prev{left:12px}
+.lb-next{right:12px}
+.lb-counter{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.7);font-size:13px;letter-spacing:.05em}
 /* sheet body */
 .sh-body{overflow-y:scroll;-webkit-overflow-scrolling:touch;flex:1;padding:0}
 .sh-body::-webkit-scrollbar{display:none}
@@ -172,6 +183,7 @@ html.dark .leaflet-container{background:#333!important}
   <div class="sh-handle" id="shHandle"><div></div></div>
   <div class="sh-body">
     <div class="ph-scroll" id="phScroll"></div>
+    <div class="ph-dots-container" id="phDots"></div>
     <div class="sh-inner">
       <div class="sh-name" id="shName"></div>
       <div class="sh-badges" id="shBadges"></div>
@@ -187,6 +199,14 @@ html.dark .leaflet-container{background:#333!important}
       <div id="shFiles"></div>
     </div>
   </div>
+</div>
+<!-- lightbox -->
+<div class="lb" id="lb" role="dialog" aria-modal="true">
+  <button class="lb-close" id="lbClose" aria-label="Fechar">✕</button>
+  <button class="lb-arrow lb-prev" id="lbPrev" aria-label="Anterior">&#8249;</button>
+  <img class="lb-img" id="lbImg" src="" alt="">
+  <button class="lb-arrow lb-next" id="lbNext" aria-label="Próxima">&#8250;</button>
+  <div class="lb-counter" id="lbCounter"></div>
 </div>
 <input type="file" id="fileInput" accept="*/*" multiple style="display:none">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
@@ -255,7 +275,7 @@ function et(s){return s?String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").rep
 // Brand logo SVGs
 const LOGO={
   gm:`<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`,
-  wz:`<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.997 0C5.378 0 0 5.381 0 12.003 0 18.625 5.379 24 11.997 24 18.617 24 24 18.625 24 12.003 24 5.381 18.617 0 11.997 0zm.6 4.56c1.73 0 3.15 1.42 3.15 3.15 0 1.736-1.42 3.146-3.15 3.146-1.73 0-3.153-1.41-3.153-3.146C9.444 5.98 10.867 4.56 12.597 4.56zm-4.8 1.59c.585 0 1.06.474 1.06 1.056 0 .587-.475 1.06-1.06 1.06-.585 0-1.057-.473-1.057-1.06 0-.582.472-1.056 1.057-1.056zm9.59 0c.585 0 1.06.474 1.06 1.056 0 .587-.475 1.06-1.06 1.06-.585 0-1.057-.473-1.057-1.06 0-.582.472-1.056 1.057-1.056zm-4.79 5.052c1.758 0 3.39.607 4.642 1.616-.18.192-.35.39-.508.596-1.052-1.018-2.483-1.646-4.062-1.646-.944 0-1.83.228-2.614.627l-.082.042a6.108 6.108 0 0 0-.46-.597 6.086 6.086 0 0 1 3.084-.638zm-6.43 2.56a.848.848 0 0 1 .17-.004c.277.016.748.09 1.206.284l.106.045a4.87 4.87 0 0 0 1.088.3 4.954 4.954 0 0 0 .41.028 4.952 4.952 0 0 0 .48-.023c.37-.034.746-.127 1.106-.302l.103-.05c.465-.216.914-.317 1.255-.326h.077c.332 0 .716.076 1.054.272l.18.103-.194.178c-.57.535-1.012 1.226-1.225 1.987l-.03.105-.11-.002c-.865-.018-1.62.179-2.196.56-.575.382-.98.946-1.115 1.598l-.017.086-.086-.017a2.68 2.68 0 0 1-1.596-1.047l-.032-.05.021-.055c.152-.403.18-.856.086-1.286l-.023-.103.107-.013c.22-.027.433-.055.583-.124.141-.067.183-.152.169-.27-.02-.168-.105-.38-.21-.594-.082-.163-.17-.32-.249-.46l-.048-.084.054-.078c.099-.14.246-.318.4-.496.104-.118.207-.237.298-.352z"/></svg>`,
+  wz:`<span aria-hidden="true" style="display:inline-block;width:19px;height:21px;background:url(waze-logo.png) no-repeat;background-size:62px 18px;background-position:-43px 0;flex-shrink:0"></span>`,
   wa:`<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>`,
   ap:`<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>`
 };
@@ -451,13 +471,22 @@ function openSheet(idx){
 
   // photos - scroll snap slides
   const photos=s.photos||[];
+  window._lbPhotos=photos;
   document.getElementById("phScroll").innerHTML=photos.length
     ? photos.map((u,i)=>`
         <div class="ph-slide">
-          <img src="${u}" alt="" loading="eager" onerror="this.closest('.ph-slide').style.display='none'">
-          ${photos.length>1?`<div class="ph-dots">${photos.map((_,j)=>`<div class="ph-dot${j===i?" a":""}"></div>`).join("")}</div>`:""}
+          <img src="${u}" alt="" loading="eager" style="cursor:pointer" onclick="openLightbox(window._lbPhotos,${i})" onerror="this.closest('.ph-slide').style.display='none'">
         </div>`).join("")
     : "";
+
+  // dots container
+  const dotsContainer=document.getElementById("phDots");
+  if(photos.length>1){
+    dotsContainer.innerHTML=photos.map((_,j)=>`<div class="ph-dot${j===0?" a":""}"></div>`).join("");
+    dotsContainer.style.display="flex";
+  } else {
+    dotsContainer.style.display="none";
+  }
 
   // update dots on photo scroll
   const ps=document.getElementById("phScroll");
@@ -465,7 +494,7 @@ function openSheet(idx){
   if(photos.length>1){
     ps.onscroll=function(){
       const ci=Math.round(ps.scrollLeft/ps.clientWidth);
-      ps.querySelectorAll(".ph-dot").forEach((d,j)=>d.classList.toggle("a",j===ci));
+      dotsContainer.querySelectorAll(".ph-dot").forEach((d,j)=>d.classList.toggle("a",j===ci));
     };
   }
 
@@ -497,7 +526,7 @@ function openSheet(idx){
   const waMsg=encodeURIComponent("Olá! Gostaria de fazer uma reserva.");
   let acts="";
 
-  if(s.website) acts+=`<a class="ab site full" href="${eu(s.website)}">🌐 Site oficial</a>`;
+  if(s.website) acts+=`<a class="ab site" href="${eu(s.website)}">🌐 Site oficial</a>`;
 
   if(s.gmaps)   acts+=`<a class="ab ap" href="${eu(s.gmaps)}">${LOGO.gm} Google Maps</a>`;
   if(s.lat)     acts+=`<a class="ab wz" href="https://waze.com/ul?ll=${s.lat},${s.lng}&amp;navigate=yes">${LOGO.wz} Waze</a>`;
@@ -535,6 +564,48 @@ function closeSheet(){
 ["shClose","shHandle","ov"].forEach(id=>{
   document.getElementById(id).addEventListener("click",closeSheet);
 });
+
+// ─── lightbox ──────────────────────────────────────────────────────────────
+(function(){
+  let _photos=[], _idx=0, _startX=0, _dragging=false;
+  const lb=document.getElementById("lb");
+  const lbImg=document.getElementById("lbImg");
+  const lbCounter=document.getElementById("lbCounter");
+
+  function show(i){
+    _idx=(i+_photos.length)%_photos.length;
+    lbImg.src=_photos[_idx];
+    lbCounter.textContent=_photos.length>1?`${_idx+1} / ${_photos.length}`:"";
+    document.getElementById("lbPrev").style.display=_photos.length>1?"flex":"none";
+    document.getElementById("lbNext").style.display=_photos.length>1?"flex":"none";
+  }
+
+  window.openLightbox=function(photos, idx){
+    _photos=photos; show(idx);
+    lb.classList.add("open");
+  };
+
+  document.getElementById("lbClose").addEventListener("click",()=>lb.classList.remove("open"));
+  document.getElementById("lbPrev").addEventListener("click",()=>show(_idx-1));
+  document.getElementById("lbNext").addEventListener("click",()=>show(_idx+1));
+  lb.addEventListener("click",function(e){if(e.target===lb)lb.classList.remove("open");});
+
+  // keyboard
+  document.addEventListener("keydown",function(e){
+    if(!lb.classList.contains("open")) return;
+    if(e.key==="ArrowLeft") show(_idx-1);
+    else if(e.key==="ArrowRight") show(_idx+1);
+    else if(e.key==="Escape") lb.classList.remove("open");
+  });
+
+  // swipe
+  lb.addEventListener("pointerdown",function(e){_startX=e.clientX;_dragging=true;});
+  lb.addEventListener("pointerup",function(e){
+    if(!_dragging) return; _dragging=false;
+    const dx=e.clientX-_startX;
+    if(Math.abs(dx)>50) show(dx<0?_idx+1:_idx-1);
+  });
+})();
 
 // ─── phase switch ──────────────────────────────────────────────────────────
 function setPhase(p){
