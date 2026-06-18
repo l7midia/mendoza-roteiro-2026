@@ -466,6 +466,26 @@ function renderDay(){
   initMap(day.stops||[],ph);
 }
 
+function updatePhotoScroll(photos){
+  const ps=document.getElementById('phScroll');
+  const dc=document.getElementById('phDots');
+  window._lbPhotos=photos;
+  ps.innerHTML=photos.map(function(u,i){
+    return '<div class="ph-slide"><img src="'+u+'" alt="" loading="eager" style="cursor:pointer" onclick="openLightbox(window._lbPhotos,'+i+')" onerror="this.closest(\'.ph-slide\').style.display=\'none\'"></div>';
+  }).join('');
+  if(photos.length>1){
+    dc.innerHTML=photos.map(function(_,j){return '<div class="ph-dot'+(j===0?' a':'')+'"></div>';}).join('');
+    dc.style.display='flex';
+    ps.onscroll=function(){
+      const ci=Math.round(ps.scrollLeft/ps.clientWidth);
+      dc.querySelectorAll('.ph-dot').forEach(function(d,j){d.classList.toggle('a',j===ci);});
+    };
+  } else {
+    dc.style.display='none';
+    ps.onscroll=null;
+  }
+}
+
 // ─── open sheet ────────────────────────────────────────────────────────────
 function openSheet(idx){
   const s=DATA[ph][di].stops[idx];
