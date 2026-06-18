@@ -534,7 +534,8 @@ function openSheet(idx){
   if(isRestaurant){
     const mp=s.menuPhotos||[];
     if(mp.length){
-      acts+=`<button class="ab menu full" onclick="openLightbox(${JSON.stringify(mp)},0)">📋 Cardápio</button>`;
+      window._menuPhotos=mp;
+      acts+=`<button class="ab menu full" onclick="openLightbox(window._menuPhotos,0)">📋 Cardápio</button>`;
     } else if(s.website){
       acts+=`<a class="ab menu full" href="${eu(s.website)}">📋 Cardápio</a>`;
     }
