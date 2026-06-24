@@ -160,6 +160,41 @@ html.dark .leaflet-container{background:#333!important}
 .sh-file-del{background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px;flex-shrink:0;line-height:1;touch-action:manipulation;-webkit-appearance:none}
 .sh-files-empty{font-size:13px;color:var(--t3);text-align:center;padding:16px 0;font-style:italic}
 .stop-filebadge{font-size:10px;background:rgba(0,122,255,.12);color:var(--blue);border-radius:999px;padding:2px 7px;font-weight:600;margin-top:5px;display:inline-block}
+/* ── Status: realizado / pendente ─────────────────────────────────────────── */
+.b-opcional{background:rgba(120,90,200,.12);color:#6A4AC0}
+html.dark .b-opcional{background:rgba(150,120,230,.18);color:#B9A6F0}
+.st-pill{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;letter-spacing:.02em;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}
+.st-done{background:rgba(52,199,89,.16);color:#1A8C36}
+.st-pend{background:rgba(255,149,0,.18);color:#9A5A00}
+.stop-row.is-done .stop-name{text-decoration:line-through;opacity:.55}
+.stop-row.is-done .stop-card{opacity:.78}
+.stop-row.is-pend{background:rgba(255,149,0,.05)}
+.stop-row.is-pend .stop-section,.stop-row.is-pend{}
+.stop-row.is-pend .stop-dot{box-shadow:0 0 0 2px rgba(255,149,0,.5)}
+/* status controls in sheet */
+.sh-status{display:flex;gap:8px;margin-bottom:16px}
+.stbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;border:1px solid var(--sep);background:var(--bg3);color:var(--t2);-webkit-appearance:none}
+.stbtn.done.on{background:rgba(52,199,89,.16);border-color:rgba(52,199,89,.5);color:#1A8C36}
+.stbtn.pend.on{background:rgba(255,149,0,.16);border-color:rgba(255,149,0,.5);color:#9A5A00}
+/* reschedule modal */
+.rs-modal{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center}
+.rs-modal.open{display:flex}
+.rs-card{background:var(--bg2);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:20px 16px calc(16px + var(--safe-b));max-height:80dvh;display:flex;flex-direction:column;animation:rsUp .3s cubic-bezier(.32,.72,0,1)}
+@keyframes rsUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.rs-title{font-size:17px;font-weight:800;color:var(--cr);margin-bottom:4px}
+.rs-desc{font-size:13px;color:var(--t2);line-height:1.5;margin-bottom:14px}
+.rs-list{overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.rs-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--bg3);border:1.5px solid transparent;cursor:pointer;touch-action:manipulation}
+.rs-opt.sel{border-color:var(--gold);background:rgba(184,134,11,.08)}
+.rs-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--t3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
+.rs-opt.sel .rs-check{background:var(--gold);border-color:var(--gold)}
+.rs-opt-label{font-size:14px;font-weight:600;color:var(--cr)}
+.rs-opt-date{font-size:11.5px;color:var(--t3);margin-top:1px}
+.rs-acts{display:flex;gap:10px}
+.rs-btn{flex:1;padding:13px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;border:none;-webkit-appearance:none}
+.rs-btn.cancel{background:var(--bg3);color:var(--t2)}
+.rs-btn.confirm{background:var(--gold);color:#fff}
+.rs-btn.confirm:disabled{opacity:.4}
 </style>
 </head>
 <body>
@@ -188,6 +223,7 @@ html.dark .leaflet-container{background:#333!important}
     <div class="sh-inner">
       <div class="sh-name" id="shName"></div>
       <div class="sh-badges" id="shBadges"></div>
+      <div class="sh-status" id="shStatus"></div>
       <div class="sh-sect" id="shHrsSect">
         <div class="sh-sect-t">Horários de funcionamento</div>
         <div class="h-grid" id="shHrs"></div>
@@ -208,6 +244,18 @@ html.dark .leaflet-container{background:#333!important}
   <img class="lb-img" id="lbImg" src="" alt="">
   <button class="lb-arrow lb-next" id="lbNext" aria-label="Próxima">&#8250;</button>
   <div class="lb-counter" id="lbCounter"></div>
+</div>
+<!-- reschedule modal -->
+<div class="rs-modal" id="rsModal" role="dialog" aria-modal="true">
+  <div class="rs-card">
+    <div class="rs-title">Relançar para outro dia</div>
+    <div class="rs-desc" id="rsDesc">Escolha o dia para onde deseja mover esta atração. A rota do dia será recalculada automaticamente.</div>
+    <div class="rs-list" id="rsList"></div>
+    <div class="rs-acts">
+      <button class="rs-btn cancel" id="rsCancel">Cancelar</button>
+      <button class="rs-btn confirm" id="rsConfirm" disabled>Confirmar</button>
+    </div>
+  </div>
 </div>
 <input type="file" id="fileInput" accept="*/*" multiple style="display:none">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
@@ -286,6 +334,153 @@ const HOTELS={
   uco:{lat:-33.5381164,lng:-69.0210418},
   city:{lat:-32.8919487,lng:-68.8381429}
 };
+
+// ─── Roteiro: status (realizado/pendente) + reagendamento + recálculo de rota ──
+const PHASE_NAME={uco:"Valle de Uco",city:"Mendoza"};
+
+// Regenera os links de rota (Google Maps/Waze) a partir da ordem atual das paradas.
+function rebuildRouteUrl(day,phase){
+  const pts=(day.stops||[]).filter(s=>s.lat&&s.lng);
+  if(!pts.length){return;}
+  const o=HOTELS[phase]||{lat:pts[0].lat,lng:pts[0].lng};
+  const dest=pts[pts.length-1];
+  const wps=pts.slice(0,-1).map(s=>s.lat+","+s.lng).join("%7C");
+  let url="https://www.google.com/maps/dir/?api=1&travelmode=driving&origin="+o.lat+","+o.lng;
+  if(wps) url+="&waypoints="+wps;
+  url+="&destination="+dest.lat+","+dest.lng;
+  day.route=url;
+  day.waze="https://waze.com/ul?ll="+pts[0].lat+","+pts[0].lng+"&navigate=yes";
+}
+
+// Reordena as paradas do dia pela melhor rota (vizinho mais próximo a partir do hotel) e regenera os links.
+function optimizeDay(day,phase){
+  const o=HOTELS[phase];
+  const withPt=(day.stops||[]).filter(s=>s.lat&&s.lng);
+  const noPt=(day.stops||[]).filter(s=>!(s.lat&&s.lng));
+  if(withPt.length>1&&o){
+    const rem=withPt.slice(),ord=[];let cx=o.lat,cy=o.lng;
+    while(rem.length){
+      let bi=0,bd=Infinity;
+      for(let i=0;i<rem.length;i++){const dx=rem[i].lat-cx,dy=rem[i].lng-cy,d=dx*dx+dy*dy;if(d<bd){bd=d;bi=i;}}
+      const n=rem.splice(bi,1)[0];ord.push(n);cx=n.lat;cy=n.lng;
+    }
+    day.stops=ord.concat(noPt);
+  }
+  rebuildRouteUrl(day,phase);
+}
+
+// Baseline: move a Escala Humana para o dia da Zuccardi (Seg 8 set) como opcional à tarde.
+function applyBaseline(){
+  const seg=DATA.uco.find(d=>d.label==="08/09");
+  const ter=DATA.uco.find(d=>d.label==="09/09");
+  if(!seg||!ter) return;
+  const i=ter.stops.findIndex(s=>s.name&&s.name.indexOf("Escala Humana")===0);
+  if(i<0) return; // já movida
+  const esc=ter.stops.splice(i,1)[0];
+  esc.time="16h30 – 18h";
+  esc.badge="opcional";
+  esc.st="ok"; esc.stl="OPCIONAL · SEG ✓";
+  esc.hrs="Seg–Sáb 10h–17h | ⛔ Dom";
+  seg.stops.push(esc);
+  seg.title="Zuccardi ★ Michelin + Escala Humana (opcional)";
+  seg.sub="O dia inteiro no melhor vinhedo do mundo: Zuccardi + almoço no Piedra Infinita (1★ Michelin). À tarde, opção de fechar com a boutique Escala Humana, em Gualtallary.";
+  ter.title="Zorzal + Transfer p/ Mendoza";
+  ter.sub="Manhã em Gualtallary na boutique Zorzal e depois drive de ~1h15 até o Huentala, em Mendoza.";
+  rebuildRouteUrl(seg,"uco");
+  rebuildRouteUrl(ter,"uco");
+}
+
+// IDs estáveis por parada (origem fixa) — sobrevivem a movimentações.
+function assignIds(){
+  for(const p in DATA) DATA[p].forEach(d=>(d.stops||[]).forEach(s=>{ if(!s._id) s._id=p+"|"+d.label+"|"+s.name; }));
+}
+
+// Persistência do plano (status + movimentações) em localStorage.
+const PKEY="tripPlan";
+let PLAN={status:{},moves:[]};
+function loadPlanLS(){ try{const r=localStorage.getItem(PKEY); if(r){const o=JSON.parse(r); PLAN={status:o.status||{},moves:o.moves||[]};}}catch(e){} }
+function savePlan(){ try{localStorage.setItem(PKEY,JSON.stringify(PLAN));}catch(e){} }
+
+function locateStop(id){
+  for(const p in DATA){const arr=DATA[p];for(let k=0;k<arr.length;k++){const ss=arr[k].stops||[];const si=ss.findIndex(s=>s._id===id);if(si>=0)return{ph:p,day:arr[k],si};}}
+  return null;
+}
+function dayByKey(key){const a=key.split("|"),p=a[0],l=a[1];const day=(DATA[p]||[]).find(d=>d.label===l);return day?{ph:p,day}:null;}
+
+// Reaplica as movimentações salvas e os status sobre o DATA base.
+function applyPlan(){
+  (PLAN.moves||[]).forEach(mv=>{
+    const loc=locateStop(mv.id),tgt=dayByKey(mv.to);
+    if(!loc||!tgt||loc.day===tgt.day) return;
+    const st=loc.day.stops.splice(loc.si,1)[0];
+    tgt.day.stops.push(st);
+    rebuildRouteUrl(loc.day,loc.ph);
+    optimizeDay(tgt.day,tgt.ph);
+  });
+  for(const p in DATA) DATA[p].forEach(d=>(d.stops||[]).forEach(s=>{ s._status=PLAN.status[s._id]||null; }));
+}
+
+function setStatus(stop,state){
+  if(state) PLAN.status[stop._id]=state; else delete PLAN.status[stop._id];
+  stop._status=state||null; savePlan();
+}
+
+applyBaseline();
+assignIds();
+loadPlanLS();
+applyPlan();
+
+// ─── Status controls (sheet) ──────────────────────────────────────────────────
+function renderSheetStatus(idx){
+  const s=DATA[ph][di].stops[idx];
+  const el=document.getElementById("shStatus");
+  if(!el) return;
+  el.innerHTML=
+    '<button class="stbtn done'+(s._status==="done"?" on":"")+'" data-act="done">✓ Realizado</button>'+
+    '<button class="stbtn pend'+(s._status==="pending"?" on":"")+'" data-act="pend">🕓 Pendente</button>';
+  el.querySelector('[data-act="done"]').onclick=function(){
+    setStatus(s, s._status==="done"?null:"done");
+    renderSheetStatus(idx); renderDay();
+  };
+  el.querySelector('[data-act="pend"]').onclick=function(){ openReschedule(idx); };
+}
+
+// ─── Reschedule modal ─────────────────────────────────────────────────────────
+let _rsIdx=null,_rsSel=null;
+function openReschedule(idx){
+  _rsIdx=idx; _rsSel=null;
+  const cur=DATA[ph][di], s=cur.stops[idx];
+  document.getElementById("rsDesc").textContent='Para qual dia deseja relançar "'+s.name+'"? A rota do dia escolhido será recalculada automaticamente.';
+  const opts=[];
+  for(const p in DATA) DATA[p].forEach(d=>{ if(d!==cur) opts.push({key:p+"|"+d.label,label:d.label,date:d.date,ph:p}); });
+  document.getElementById("rsList").innerHTML=opts.map(o=>
+    '<div class="rs-opt" data-key="'+o.key+'"><div class="rs-check">✓</div><div><div class="rs-opt-label">'+et(o.date)+'</div><div class="rs-opt-date">'+et(o.label)+' · '+et(PHASE_NAME[o.ph])+'</div></div></div>'
+  ).join("");
+  document.getElementById("rsList").querySelectorAll(".rs-opt").forEach(el=>{
+    el.onclick=function(){
+      _rsSel=el.dataset.key;
+      document.querySelectorAll(".rs-opt").forEach(x=>x.classList.toggle("sel",x===el));
+      document.getElementById("rsConfirm").disabled=false;
+    };
+  });
+  document.getElementById("rsConfirm").disabled=true;
+  document.getElementById("rsModal").classList.add("open");
+}
+function closeReschedule(){ document.getElementById("rsModal").classList.remove("open"); }
+function confirmReschedule(){
+  if(_rsSel==null||_rsIdx==null) return;
+  const cur=DATA[ph][di], s=cur.stops[_rsIdx], tgt=dayByKey(_rsSel);
+  if(!tgt) return;
+  setStatus(s,"pending");
+  PLAN.moves.push({id:s._id,to:_rsSel}); savePlan();
+  cur.stops.splice(_rsIdx,1);
+  tgt.day.stops.push(s);
+  rebuildRouteUrl(cur,ph);
+  optimizeDay(tgt.day,tgt.ph);
+  closeReschedule(); closeSheet();
+  setPhase(tgt.ph);
+  setDay(DATA[tgt.ph].indexOf(tgt.day));
+}
 
 // Leaflet interactive map with hotel as route origin
 let _map=null;
@@ -419,7 +614,7 @@ function renderDay(){
       const ph0=s.photos&&s.photos[0]?s.photos[0]:"";
       const dot=STOP_COLORS[i%STOP_COLORS.length];
       stopsH+=`
-        <div class="stop-row${isLast?" stop-last":""}">
+        <div class="stop-row${isLast?" stop-last":""}${s._status==="done"?" is-done":s._status==="pending"?" is-pend":""}">
           <div class="stop-tl">
             <div class="stop-dot" style="background:${dot}"></div>
             <div class="stop-line" style="background:${dot}33"></div>
@@ -428,6 +623,7 @@ function renderDay(){
             <div class="stop-info">
               <div class="stop-meta">
                 ${s.time?`<span class="stop-time">${et(s.time)}</span>`:""}
+                ${s._status?`<span class="st-pill st-${s._status==="done"?"done":"pend"}">${s._status==="done"?"✓ Realizado":"🕓 Pendente"}</span>`:""}
                 ${s.badge?`<span class="badge ${bk}">${et(s.badge)}</span>`:""}
                 ${s.st?`<span class="status ${sk}">${et(s.stl)}</span>`:""}
               </div>
@@ -505,6 +701,9 @@ function openSheet(idx){
   if(s.rating) bdg+=`<span class="sh-rating">⭐ ${s.rating} <span style="color:var(--t3)">(${Number(s.rcount||0).toLocaleString("pt-BR")})</span></span>`;
   document.getElementById("shBadges").innerHTML=bdg;
 
+  // status controls (realizado / pendente)
+  renderSheetStatus(idx);
+
   // hours
   const hSect=document.getElementById("shHrsSect");
   if(s.hours){
@@ -572,6 +771,11 @@ function closeSheet(){
 ["shClose","shHandle","ov"].forEach(id=>{
   document.getElementById(id).addEventListener("click",closeSheet);
 });
+
+// reschedule modal wiring
+document.getElementById("rsCancel").addEventListener("click",closeReschedule);
+document.getElementById("rsConfirm").addEventListener("click",confirmReschedule);
+document.getElementById("rsModal").addEventListener("click",function(e){if(e.target.id==="rsModal")closeReschedule();});
 
 // ─── lightbox ──────────────────────────────────────────────────────────────
 (function(){
