@@ -421,7 +421,7 @@ function renderSheetStatus(idx){
   if(!el) return;
   el.innerHTML=
     '<button class="stbtn done'+(s._status==="done"?" on":"")+'" data-act="done">✓ Realizado</button>'+
-    '<button class="stbtn pend'+(s._status==="pending"?" on":"")+'" data-act="pend">🕓 Pendente</button>';
+    '<button class="stbtn pend'+(s._status==="pending"?" on":"")+'" data-act="pend">🕓 Remarcar</button>';
   el.querySelector('[data-act="done"]').onclick=function(){
     setStatus(s, s._status==="done"?null:"done");
     renderSheetStatus(idx); renderDay();
@@ -607,7 +607,7 @@ function renderDay(){
             <div class="stop-info">
               <div class="stop-meta">
                 ${s.time?`<span class="stop-time">${et(s.time)}</span>`:""}
-                ${s._status?`<span class="st-pill st-${s._status==="done"?"done":"pend"}">${s._status==="done"?"✓ Realizado":"🕓 Pendente"}</span>`:""}
+                ${s._status?`<span class="st-pill st-${s._status==="done"?"done":"pend"}">${s._status==="done"?"✓ Realizado":"🕓 Remarcar"}</span>`:""}
                 ${s.badge?`<span class="badge ${bk}">${et(s.badge)}</span>`:""}
                 ${s.st?`<span class="status ${sk}">${et(s.stl)}</span>`:""}
               </div>
