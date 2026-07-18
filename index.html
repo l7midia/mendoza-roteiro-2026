@@ -885,11 +885,11 @@ async function renderFilesSection(stopSk, pinnedFiles=[]){
     </div>`;
 
   // pinned files first (reservations)
+  const pinnedPhotos=pinnedFiles.map(f=>f.url);
   if(pinnedFiles.length){
-    const pinnedPhotos=pinnedFiles.map(f=>f.url);
     h+=`<div class="sh-file-list">`;
     pinnedFiles.forEach((f,i)=>{
-      h+=`<div class="sh-file-row" onclick="openLightbox(${JSON.stringify(pinnedPhotos)},${i})" style="cursor:pointer">
+      h+=`<div class="sh-file-row" data-pinidx="${i}" style="cursor:pointer">
         <span class="sh-file-ico">📷</span>
         <div class="sh-file-info">
           <div class="sh-file-name">${et(f.label)}</div>
@@ -928,11 +928,18 @@ async function renderFilesSection(stopSk, pinnedFiles=[]){
     inp.click();
   });
 
-  // open file on row click
-  el.querySelectorAll('.sh-file-row').forEach((row,i)=>{
+  // open pinned reservation on row click
+  el.querySelectorAll('.sh-file-row[data-pinidx]').forEach(row=>{
+    row.addEventListener('click',function(){
+      openLightbox(pinnedPhotos, parseInt(this.dataset.pinidx));
+    });
+  });
+
+  // open user-uploaded file on row click
+  el.querySelectorAll('.sh-file-row[data-fid]').forEach(row=>{
     row.addEventListener('click',function(e){
       if(e.target.dataset.fid) return; // delete btn
-      const f=files[i];
+      const f=files.find(x=>x.id===parseInt(this.dataset.fid));
       if(!f) return;
       const blob=new Blob([f.data],{type:f.type||'application/octet-stream'});
       const url=URL.createObjectURL(blob);
