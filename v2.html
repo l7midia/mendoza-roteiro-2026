@@ -96,12 +96,9 @@ html.dark .b-hotel{background:rgba(220,90,90,.2);color:#F0A0A0}
 .stop-row.is-optional{filter:grayscale(.8);opacity:.62}
 .stop-row.is-optional .stop-dot{border-style:dashed;border-width:1.5px;background:#9A9A9A!important}
 .stop-row.is-optional .stop-line{background:#9A9A9A33!important}
-/* MEAL HIGHLIGHT — almoço / jantar cards get a distinct accent so they read as food stops at a glance */
-.stop-row.is-meal .stop-card{background:linear-gradient(90deg,rgba(207,128,80,.12),rgba(207,128,80,.02) 55%,transparent);border-radius:0 10px 10px 0}
-.stop-row.is-meal .stop-dot{box-shadow:0 0 0 3px rgba(207,128,80,.4)}
+/* MEAL HIGHLIGHT — almoço / jantar stops get a painted badge, nothing else */
 .meal-tag{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;letter-spacing:.03em;color:#fff;background:#CF8050;padding:3px 9px;border-radius:999px;white-space:nowrap;box-shadow:0 1px 4px rgba(207,128,80,.5)}
 html.dark .meal-tag{background:#E0985F;color:#1C1C1E;box-shadow:0 1px 4px rgba(224,152,95,.35)}
-.sp-card.is-meal{box-shadow:0 0 0 2px #CF8050,0 1px 4px rgba(0,0,0,.12)}
 .sp-meal-tag{position:absolute;bottom:26px;left:7px;font-size:8.5px;font-weight:800;letter-spacing:.03em;color:#fff;background:#CF8050;padding:2px 6px;border-radius:4px;z-index:2}
 /* OVERLAY */
 .ov{position:fixed;top:0;left:0;right:0;bottom:0;background:transparent;z-index:8000;pointer-events:none;transition:background .3s}
@@ -633,7 +630,7 @@ function renderDay(){
     const dot=STOP_COLORS[i%STOP_COLORS.length];
     const timeShort=s.time?s.time.split("–")[0].trim():"";
     const isMeal=isMealStop(s);
-    return `<button class="sp-card${isMeal?" is-meal":""}" data-idx="${i}">
+    return `<button class="sp-card" data-idx="${i}">
       <div class="sp-img"${ph0?` style="background-image:url('${ph0}')"`:""}>
         <div class="sp-num" style="background:${dot}">${i+1}</div>
         ${timeShort?`<div class="sp-time">${et(timeShort)}</div>`:""}
@@ -663,7 +660,7 @@ function renderDay(){
       const dot=STOP_COLORS[i%STOP_COLORS.length];
       const isMeal=isMealStop(s);
       stopsH+=`
-        <div class="stop-row${isLast?" stop-last":""}${isMeal?" is-meal":""}${s._status==="done"?" is-done":s._status==="pending"?" is-pend":""}">
+        <div class="stop-row${isLast?" stop-last":""}${s._status==="done"?" is-done":s._status==="pending"?" is-pend":""}">
           <div class="stop-tl">
             <div class="stop-dot" style="background:${dot}"></div>
             <div class="stop-line" style="background:${dot}33"></div>
