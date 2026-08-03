@@ -808,37 +808,61 @@ function renderDay(){
   stopsH+='</div>';
 
   const optional=day.optional||[];
+  const optAttr=optional.map((s,i)=>({s,i})).filter(x=>!isMealStop(x.s));
+  const optMeal=optional.map((s,i)=>({s,i})).filter(x=>isMealStop(x.s));
   let optH='';
   if(optional.length){
-    optH+=`<div class="opt-hdr">Opcionais do dia — fora do roteiro original</div><div class="opt-note">Não entram no mapa nem na rota. Toque para ver detalhes.</div><div class="stop-section">`;
-    optional.forEach((s,i)=>{
-      const isLast=i===optional.length-1;
-      const bk=BC[s.badge]||"b-cidade";
-      const sk=s.st?SC[s.st]:"";
-      const ph0=s.photos&&s.photos[0]?s.photos[0]:"";
-      optH+=`
-        <div class="stop-row is-optional${isLast?" stop-last":""}">
-          <div class="stop-tl">
-            <div class="stop-dot"></div>
-            <div class="stop-line"></div>
-          </div>
-          <button class="stop-card" data-opt-idx="${i}">
-            <div class="stop-info">
-              <div class="stop-meta">
-                ${s.time?`<span class="stop-time">${et(s.time)}</span>`:""}
-                ${s.badge?`<span class="badge ${bk}">${et(s.badge)}</span>`:""}
-                ${s.st?`<span class="status ${sk}">${et(s.stl)}</span>`:""}
-              </div>
-              <div class="stop-name">${et(s.name)}</div>
-              ${s.hrs?`<div class="stop-hrs">🕐 ${et(s.hrs)}</div>`:""}
-              ${s.desc?`<div class="stop-desc">${et(s.desc)}</div>`:""}
-              <div class="stop-caret">ver detalhes ›</div>
+    optH+=`<div class="opt-hdr">Opcionais do dia — fora do roteiro original</div><div class="opt-note">Não entram no mapa nem na rota. Toque para ver detalhes.</div>`;
+    if(optAttr.length){
+      optH+='<div class="stop-section">';
+      optAttr.forEach(({s,i},k)=>{
+        const isLast=k===optAttr.length-1;
+        const bk=BC[s.badge]||"b-cidade";
+        const sk=s.st?SC[s.st]:"";
+        const ph0=s.photos&&s.photos[0]?s.photos[0]:"";
+        optH+=`
+          <div class="stop-row is-optional${isLast?" stop-last":""}">
+            <div class="stop-tl">
+              <div class="stop-dot"></div>
+              <div class="stop-line"></div>
             </div>
-            ${ph0?`<img class="stop-thumb" src="${ph0}" alt="" loading="lazy" onload="this.style.opacity=1" onerror="this.remove()" style="opacity:0;transition:opacity .3s">`:""}
-          </button>
-        </div>`;
-    });
-    optH+='</div>';
+            <button class="stop-card" data-opt-idx="${i}">
+              <div class="stop-info">
+                <div class="stop-meta">
+                  ${s.time?`<span class="stop-time">${et(s.time)}</span>`:""}
+                  ${s.badge?`<span class="badge ${bk}">${et(s.badge)}</span>`:""}
+                  ${s.st?`<span class="status ${sk}">${et(s.stl)}</span>`:""}
+                </div>
+                <div class="stop-name">${et(s.name)}</div>
+                ${s.hrs?`<div class="stop-hrs">🕐 ${et(s.hrs)}</div>`:""}
+                ${s.desc?`<div class="stop-desc">${et(s.desc)}</div>`:""}
+                <div class="stop-caret">ver detalhes ›</div>
+              </div>
+              ${ph0?`<img class="stop-thumb" src="${ph0}" alt="" loading="lazy" onload="this.style.opacity=1" onerror="this.remove()" style="opacity:0;transition:opacity .3s">`:""}
+            </button>
+          </div>`;
+      });
+      optH+='</div>';
+    }
+    if(optMeal.length){
+      const mealLabel=optMeal[0].s.t==="dinner"?"Restaurantes de vinícola (jantar)":"Restaurantes de vinícola (almoço)";
+      optH+=`<div class="opt-note" style="padding-top:2px">${et(mealLabel)} — não entram no mapa nem na rota.</div><div class="meal-car">`;
+      optMeal.forEach(({s,i})=>{
+        const ph0=s.photos&&s.photos[0]?s.photos[0]:"";
+        optH+=`<button class="mc-card" data-opt-idx="${i}">
+          <div class="mc-img"${ph0?` style="background-image:url('${ph0}')"`:""}>
+            ${s.rating?`<div class="mc-rate">★ ${s.rating}<span>(${Number(s.rcount||0).toLocaleString("pt-BR")})</span></div>`:""}
+            ${tagsHtml(s)}
+          </div>
+          <div class="mc-body">
+            <div class="mc-name">${et(s.name)}</div>
+            <div class="mc-meta">${et(s.hrs||"")}</div>
+            ${s.price?`<div class="mc-price">${et(s.price)}</div>`:""}
+          </div>
+        </button>`;
+      });
+      optH+='</div>';
+    }
   }
 
   cont.innerHTML=`
@@ -856,10 +880,10 @@ function renderDay(){
   cont.querySelectorAll(".stop-card[data-idx],.sp-card").forEach(btn=>{
     onTap(btn,function(){openSheet(parseInt(this.dataset.idx));});
   });
-  cont.querySelectorAll(".stop-card[data-opt-idx]").forEach(btn=>{
+  cont.querySelectorAll("[data-opt-idx]").forEach(btn=>{
     onTap(btn,function(){openSheet(parseInt(this.dataset.optIdx),DATA[ph][di].optional||[],"opt");});
   });
-  cont.querySelectorAll(".mc-card").forEach(btn=>{
+  cont.querySelectorAll(".mc-card[data-mi]").forEach(btn=>{
     onTap(btn,function(){
       const meal=this.dataset.meal;
       openSheet(parseInt(this.dataset.mi),mealOptions(DATA[ph][di],meal),"meal",meal);
