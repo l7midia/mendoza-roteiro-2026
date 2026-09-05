@@ -236,6 +236,18 @@ html.dark .leaflet-container{background:#333!important}
 .pdfv-pages{flex:1;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#525659;display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 10px calc(14px + var(--safe-b))}
 .pdfv-pages canvas{max-width:100%;height:auto;box-shadow:0 2px 10px rgba(0,0,0,.5);background:#fff}
 .pdfv-loading{color:rgba(255,255,255,.7);font-size:13px;padding:40px 0}
+.ab.split{background:rgba(184,134,11,.12);color:var(--gold);border-color:rgba(184,134,11,.3)}
+.split-sect-t{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);font-weight:700;margin:14px 0 6px}
+.split-sect-t:first-child{margin-top:0}
+.split-chip{padding:7px 13px;border-radius:20px;border:1.5px solid var(--sep);background:var(--bg3);color:var(--t2);font-size:12.5px;font-weight:700;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.split-chip.on{background:var(--gold);border-color:var(--gold);color:#fff}
+.split-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.split-label{flex:1;font-size:13px;color:var(--cr);font-weight:600}
+.split-input{width:100px;padding:8px;border-radius:8px;border:1px solid var(--sep);background:var(--bg3);color:var(--cr);font-size:13px;-webkit-appearance:none}
+.split-select{padding:8px 4px;border-radius:8px;border:1px solid var(--sep);background:var(--bg3);color:var(--cr);font-size:12px}
+.split-result{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;background:var(--bg3);border-radius:10px;margin-bottom:6px;font-size:13px;color:var(--cr)}
+.split-diff-pos{color:#1A8C36}
+.split-diff-neg{color:#D64545}
 .sh-files-add{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;-webkit-appearance:none}
 .sh-file-list{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
 .sh-file-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -287,6 +299,7 @@ html.dark .b-opcional{background:rgba(150,120,230,.18);color:#B9A6F0}
 <div class="hdr">
   <div style="display:flex;align-items:center;gap:10px">
     <button class="theme-btn" id="docsBtn" aria-label="Documentos da viagem">📄</button>
+    <button class="theme-btn" id="summaryBtn" aria-label="Resumo da viagem">💰</button>
     <div class="logo">Mendoza <em>·</em> V2</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -372,6 +385,27 @@ html.dark .b-opcional{background:rgba(150,120,230,.18);color:#B9A6F0}
     <div class="rs-list" id="docsBody"></div>
     <div class="rs-acts">
       <button class="rs-btn cancel" id="docsClose">Fechar</button>
+    </div>
+  </div>
+</div>
+<!-- dividir a conta modal -->
+<div class="rs-modal" id="splitModal" role="dialog" aria-modal="true">
+  <div class="rs-card">
+    <div class="rs-title" id="splitTitle">🧮 Dividir a conta</div>
+    <div class="rs-list" id="splitBody"></div>
+    <div class="rs-acts">
+      <button class="rs-btn cancel" id="splitClose">Fechar</button>
+    </div>
+  </div>
+</div>
+<!-- resumo da viagem modal -->
+<div class="rs-modal" id="summaryModal" role="dialog" aria-modal="true">
+  <div class="rs-card">
+    <div class="rs-title">💰 Resumo da Viagem</div>
+    <div class="rs-desc">Soma todas as refeições com divisão registrada e mostra quem deve pagar a quem.</div>
+    <div class="rs-list" id="summaryBody"></div>
+    <div class="rs-acts">
+      <button class="rs-btn cancel" id="summaryClose">Fechar</button>
     </div>
   </div>
 </div>
@@ -513,8 +547,8 @@ function assignIds(){
 
 // Persistência do plano (status + movimentações) em localStorage.
 const PKEY="tripPlan";
-let PLAN={status:{},moves:[],meals:{}};
-function loadPlanLS(){ try{const r=localStorage.getItem(PKEY); if(r){const o=JSON.parse(r); PLAN={status:o.status||{},moves:o.moves||[],meals:o.meals||{}};}}catch(e){} }
+let PLAN={status:{},moves:[],meals:{},splits:{},fx:{usd:1485,brl:287}};
+function loadPlanLS(){ try{const r=localStorage.getItem(PKEY); if(r){const o=JSON.parse(r); PLAN={status:o.status||{},moves:o.moves||[],meals:o.meals||{},splits:o.splits||{},fx:o.fx||{usd:1485,brl:287}};}}catch(e){} }
 function savePlan(){ try{localStorage.setItem(PKEY,JSON.stringify(PLAN));}catch(e){} }
 
 // ─── Refeições a definir (almoço/jantar escolhidos na hora) ──────────────────
@@ -1020,6 +1054,9 @@ function openSheet(idx,arr,kind,meal){
     } else if(s.website){
       actsMain+=`<a class="ab menu" href="${eu(s.website)}">📋 Cardápio</a>`;
     }
+    window._splitSk=buildSk(ph,DATA[ph][di].label,s.name);
+    window._splitTitle=s.name||"";
+    actsMain+=`<button class="ab split" onclick="openSplitModal()">🧮 Dividir a conta</button>`;
   }
 
   if(s.infoImportante){
@@ -1197,6 +1234,249 @@ document.getElementById("pdfViewerClose").addEventListener("click",closePdfViewe
 function closeDocsModal(){ document.getElementById("docsModal").classList.remove("open"); }
 document.getElementById("docsClose").addEventListener("click",closeDocsModal);
 document.getElementById("docsModal").addEventListener("click",function(e){if(e.target.id==="docsModal")closeDocsModal();});
+
+// ─── Dividir a conta (splitwise) ────────────────────────────────────────────
+const SPLIT_PEOPLE=[["fio","Fio"],["meg","Meg"],["rafa","Rafa"],["dulce","Dulce"]];
+let _splitSk="";
+function defaultSplit(){
+  return {
+    title:"",
+    people:{fio:true,meg:true,rafa:true,dulce:true},
+    total:0, hadAlcohol:false, alcoholTotal:0,
+    drinkers:{fio:false,meg:false,rafa:false,dulce:false},
+    paid:{fio:{amount:0,cur:"ARS"},meg:{amount:0,cur:"ARS"},rafa:{amount:0,cur:"ARS"},dulce:{amount:0,cur:"ARS"}}
+  };
+}
+function getSplit(sk){
+  if(!PLAN.splits[sk]) PLAN.splits[sk]=defaultSplit();
+  return PLAN.splits[sk];
+}
+function toARS(amount,cur){
+  amount=Number(amount)||0;
+  if(cur==="USD") return amount*(Number(PLAN.fx.usd)||0);
+  if(cur==="BRL") return amount*(Number(PLAN.fx.brl)||0);
+  return amount;
+}
+function fmtARS(n){ return "ARS "+Math.round(n).toLocaleString("es-AR"); }
+function splitFairShares(sp){
+  const parts=SPLIT_PEOPLE.filter(([k])=>sp.people[k]).map(([k])=>k);
+  const n=parts.length;
+  const alcohol=sp.hadAlcohol?(Number(sp.alcoholTotal)||0):0;
+  const foodTotal=Math.max((Number(sp.total)||0)-alcohol,0);
+  const foodPer=n?foodTotal/n:0;
+  const drinkersList=parts.filter(k=>sp.drinkers[k]);
+  const alcPer=(sp.hadAlcohol&&drinkersList.length)?alcohol/drinkersList.length:0;
+  const fair={};
+  SPLIT_PEOPLE.forEach(([k])=>{ fair[k]=parts.includes(k)?(foodPer+(sp.drinkers[k]?alcPer:0)):0; });
+  return {parts,fair};
+}
+window.openSplitModal=function(){
+  _splitSk=window._splitSk;
+  const sp=getSplit(_splitSk);
+  if(!sp.title) sp.title=window._splitTitle||"";
+  document.getElementById("splitTitle").textContent="🧮 Dividir a conta — "+(window._splitTitle||sp.title||"");
+  renderSplitBody();
+  document.getElementById("splitModal").classList.add("open");
+};
+function closeSplitModal(){ document.getElementById("splitModal").classList.remove("open"); }
+document.getElementById("splitClose").addEventListener("click",closeSplitModal);
+document.getElementById("splitModal").addEventListener("click",function(e){if(e.target.id==="splitModal")closeSplitModal();});
+
+function renderSplitBody(){
+  const sp=getSplit(_splitSk);
+  const {parts}=splitFairShares(sp);
+  let h="";
+
+  h+=`<div class="split-sect-t">Quem participou desta refeição?</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px">`;
+  SPLIT_PEOPLE.forEach(([k,label])=>{
+    h+=`<button type="button" class="split-chip ${sp.people[k]?'on':''}" data-act="toggle-person" data-k="${k}">${label}</button>`;
+  });
+  h+=`</div>`;
+
+  h+=`<div class="split-sect-t">Valor total da conta</div>`;
+  h+=`<div class="split-row"><div class="split-label">ARS</div><input type="number" inputmode="decimal" class="split-input" value="${sp.total||''}" data-act="total"></div>`;
+
+  h+=`<div class="split-sect-t">Teve bebida alcoólica?</div><div style="display:flex;gap:6px;margin-bottom:4px">
+    <button type="button" class="split-chip ${sp.hadAlcohol?'on':''}" data-act="alcohol" data-v="1">Sim</button>
+    <button type="button" class="split-chip ${!sp.hadAlcohol?'on':''}" data-act="alcohol" data-v="0">Não</button>
+  </div>`;
+
+  if(sp.hadAlcohol){
+    h+=`<div class="split-row" style="margin-top:8px"><div class="split-label">Valor da bebida (ARS)</div><input type="number" inputmode="decimal" class="split-input" value="${sp.alcoholTotal||''}" data-act="alctotal"></div>`;
+    h+=`<div class="split-sect-t">Quem bebeu?</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px">`;
+    if(parts.length){
+      parts.forEach(k=>{
+        const label=SPLIT_PEOPLE.find(x=>x[0]===k)[1];
+        h+=`<button type="button" class="split-chip ${sp.drinkers[k]?'on':''}" data-act="toggle-drinker" data-k="${k}">${label}</button>`;
+      });
+    } else {
+      h+=`<span style="font-size:12px;color:var(--t3)">Selecione quem participou primeiro</span>`;
+    }
+    h+=`</div>`;
+  }
+
+  h+=`<div id="splitFairBody"></div>`;
+
+  h+=`<div class="split-sect-t">Quanto cada um pagou de fato?</div>`;
+  parts.forEach(k=>{
+    const label=SPLIT_PEOPLE.find(x=>x[0]===k)[1];
+    const pd=sp.paid[k]||{amount:0,cur:"ARS"};
+    h+=`<div class="split-row">
+      <div class="split-label">${label}</div>
+      <input type="number" inputmode="decimal" class="split-input" style="width:84px" value="${pd.amount||''}" data-act="paid-amount" data-k="${k}">
+      <select class="split-select" data-act="paid-cur" data-k="${k}">
+        <option value="ARS" ${pd.cur==='ARS'?'selected':''}>ARS</option>
+        <option value="BRL" ${pd.cur==='BRL'?'selected':''}>BRL</option>
+        <option value="USD" ${pd.cur==='USD'?'selected':''}>USD</option>
+      </select>
+    </div>`;
+  });
+  if(!parts.length) h+=`<div style="font-size:12px;color:var(--t3);margin-bottom:8px">Selecione quem participou primeiro</div>`;
+
+  h+=`<div class="split-sect-t">Câmbio (ajustável)</div>
+    <div class="split-row"><div class="split-label">1 USD = ___ ARS</div><input type="number" inputmode="decimal" class="split-input" value="${PLAN.fx.usd||''}" data-act="fx-usd"></div>
+    <div class="split-row"><div class="split-label">1 BRL = ___ ARS</div><input type="number" inputmode="decimal" class="split-input" value="${PLAN.fx.brl||''}" data-act="fx-brl"></div>`;
+
+  h+=`<div id="splitDiffBody"></div>`;
+
+  document.getElementById("splitBody").innerHTML=h;
+  updateSplitCalc();
+}
+function updateSplitCalc(){
+  const sp=getSplit(_splitSk);
+  const {parts,fair}=splitFairShares(sp);
+
+  let fh=`<div class="split-sect-t">Valor justo por pessoa</div>`;
+  if(!parts.length){
+    fh+=`<div class="split-result" style="justify-content:center;color:var(--t3)">Selecione quem participou</div>`;
+  } else {
+    parts.forEach(k=>{
+      const label=SPLIT_PEOPLE.find(x=>x[0]===k)[1];
+      fh+=`<div class="split-result"><span>${label}${sp.drinkers[k]?' 🍷':''}</span><b>${fmtARS(fair[k])}</b></div>`;
+    });
+  }
+  document.getElementById("splitFairBody").innerHTML=fh;
+
+  let dh="";
+  if(parts.length){
+    dh+=`<div class="split-sect-t">Diferença (pago − justo)</div>`;
+    parts.forEach(k=>{
+      const label=SPLIT_PEOPLE.find(x=>x[0]===k)[1];
+      const pd=sp.paid[k]||{amount:0,cur:"ARS"};
+      const paidArs=toARS(pd.amount,pd.cur);
+      const diff=paidArs-fair[k];
+      const cls=diff>0.5?'split-diff-pos':diff<-0.5?'split-diff-neg':'';
+      const sign=diff>0.5?'+':'';
+      dh+=`<div class="split-result"><span>${label}</span><b class="${cls}">${sign}${fmtARS(diff)}</b></div>`;
+    });
+  }
+  document.getElementById("splitDiffBody").innerHTML=dh;
+}
+document.getElementById("splitBody").addEventListener("click",function(e){
+  const btn=e.target.closest("[data-act]");
+  if(!btn) return;
+  const sp=getSplit(_splitSk);
+  const act=btn.dataset.act;
+  if(act==="toggle-person"){
+    const k=btn.dataset.k; sp.people[k]=!sp.people[k];
+    if(!sp.people[k]) sp.drinkers[k]=false;
+  } else if(act==="alcohol"){
+    sp.hadAlcohol=btn.dataset.v==="1";
+    if(!sp.hadAlcohol){ sp.alcoholTotal=0; SPLIT_PEOPLE.forEach(([k])=>sp.drinkers[k]=false); }
+  } else if(act==="toggle-drinker"){
+    const k=btn.dataset.k; sp.drinkers[k]=!sp.drinkers[k];
+  } else return;
+  savePlan();
+  renderSplitBody();
+});
+document.getElementById("splitBody").addEventListener("input",function(e){
+  const el=e.target.closest("[data-act]");
+  if(!el) return;
+  const sp=getSplit(_splitSk);
+  const act=el.dataset.act;
+  if(act==="total"){ sp.total=Number(el.value)||0; }
+  else if(act==="alctotal"){ sp.alcoholTotal=Number(el.value)||0; }
+  else if(act==="paid-amount"){ const k=el.dataset.k; sp.paid[k]=sp.paid[k]||{amount:0,cur:"ARS"}; sp.paid[k].amount=Number(el.value)||0; }
+  else if(act==="paid-cur"){ const k=el.dataset.k; sp.paid[k]=sp.paid[k]||{amount:0,cur:"ARS"}; sp.paid[k].cur=el.value; }
+  else if(act==="fx-usd"){ PLAN.fx.usd=Number(el.value)||0; }
+  else if(act==="fx-brl"){ PLAN.fx.brl=Number(el.value)||0; }
+  else return;
+  savePlan();
+  updateSplitCalc();
+});
+document.getElementById("splitBody").addEventListener("change",function(e){
+  const el=e.target.closest('select[data-act="paid-cur"]');
+  if(!el) return;
+  const sp=getSplit(_splitSk);
+  const k=el.dataset.k;
+  sp.paid[k]=sp.paid[k]||{amount:0,cur:"ARS"};
+  sp.paid[k].cur=el.value;
+  savePlan();
+  updateSplitCalc();
+});
+
+// ─── Resumo da Viagem ────────────────────────────────────────────────────
+document.getElementById("summaryBtn").addEventListener("click",function(){
+  renderSummary();
+  document.getElementById("summaryModal").classList.add("open");
+});
+function closeSummaryModal(){ document.getElementById("summaryModal").classList.remove("open"); }
+document.getElementById("summaryClose").addEventListener("click",closeSummaryModal);
+document.getElementById("summaryModal").addEventListener("click",function(e){if(e.target.id==="summaryModal")closeSummaryModal();});
+function renderSummary(){
+  const totals={}; SPLIT_PEOPLE.forEach(([k])=>totals[k]={fair:0,paid:0});
+  const entries=[];
+  Object.keys(PLAN.splits).forEach(sk=>{
+    const sp=PLAN.splits[sk];
+    if(!sp||!sp.total) return;
+    const {parts,fair}=splitFairShares(sp);
+    parts.forEach(k=>{
+      const pd=sp.paid[k]||{amount:0,cur:"ARS"};
+      totals[k].fair+=fair[k];
+      totals[k].paid+=toARS(pd.amount,pd.cur);
+    });
+    entries.push({title:sp.title||sk,total:sp.total});
+  });
+
+  let h="";
+  if(!entries.length){
+    h=`<div class="split-result" style="justify-content:center;color:var(--t3)">Nenhuma refeição com divisão registrada ainda. Abra "🧮 Dividir a conta" em algum almoço ou jantar primeiro.</div>`;
+    document.getElementById("summaryBody").innerHTML=h;
+    return;
+  }
+
+  h+=`<div class="split-sect-t">Refeições registradas (${entries.length})</div>`;
+  entries.forEach(e=>{ h+=`<div class="split-result"><span>${et(e.title)}</span><b>${fmtARS(e.total)}</b></div>`; });
+
+  const net={}; SPLIT_PEOPLE.forEach(([k])=>net[k]=totals[k].paid-totals[k].fair);
+  h+=`<div class="split-sect-t">Saldo de cada um (pago − justo)</div>`;
+  SPLIT_PEOPLE.forEach(([k,label])=>{
+    const diff=net[k];
+    const cls=diff>0.5?'split-diff-pos':diff<-0.5?'split-diff-neg':'';
+    const sign=diff>0.5?'+':'';
+    h+=`<div class="split-result"><span>${label}</span><b class="${cls}">${sign}${fmtARS(diff)}</b></div>`;
+  });
+
+  const creditors=SPLIT_PEOPLE.filter(([k])=>net[k]>0.5).map(([k,label])=>({label,amt:net[k]})).sort((a,b)=>b.amt-a.amt);
+  const debtors=SPLIT_PEOPLE.filter(([k])=>net[k]<-0.5).map(([k,label])=>({label,amt:-net[k]})).sort((a,b)=>b.amt-a.amt);
+  const txs=[];
+  let ci=0, di_=0;
+  while(ci<creditors.length && di_<debtors.length){
+    const c=creditors[ci], d=debtors[di_];
+    const amt=Math.min(c.amt,d.amt);
+    txs.push({from:d.label,to:c.label,amt});
+    c.amt-=amt; d.amt-=amt;
+    if(c.amt<0.5) ci++;
+    if(d.amt<0.5) di_++;
+  }
+  h+=`<div class="split-sect-t">Para acertar as contas</div>`;
+  if(!txs.length){
+    h+=`<div class="split-result" style="justify-content:center;color:var(--t3)">Tudo certo, ninguém deve nada 🎉</div>`;
+  } else {
+    txs.forEach(t=>{ h+=`<div class="split-result"><span>${t.from} → ${t.to}</span><b>${fmtARS(t.amt)}</b></div>`; });
+  }
+  document.getElementById("summaryBody").innerHTML=h;
+}
 
 // info importante modal
 window.openInfoModal=function(){
