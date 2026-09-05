@@ -278,6 +278,7 @@ html.dark .b-opcional{background:rgba(150,120,230,.18);color:#B9A6F0}
   <div class="logo">Mendoza <em>·</em> V2</div>
   <div style="display:flex;align-items:center;gap:10px">
     <div class="pax">4 adultos · 2 bebês</div>
+    <button class="theme-btn" id="docsBtn" aria-label="Documentos da viagem">📄</button>
     <button class="theme-btn" id="themeBtn" aria-label="Alternar modo escuro">🌙</button>
   </div>
 </div>
@@ -340,6 +341,17 @@ html.dark .b-opcional{background:rgba(150,120,230,.18);color:#B9A6F0}
     <div class="rs-list" id="infoBody"></div>
     <div class="rs-acts">
       <button class="rs-btn cancel" id="infoClose">Fechar</button>
+    </div>
+  </div>
+</div>
+<!-- documentos da viagem modal -->
+<div class="rs-modal" id="docsModal" role="dialog" aria-modal="true">
+  <div class="rs-card">
+    <div class="rs-title">📄 Documentos da Viagem</div>
+    <div class="rs-desc">Seguro viagem, aluguel de carro e outros comprovantes — funciona offline depois de aberto uma vez.</div>
+    <div class="rs-list" id="docsBody"></div>
+    <div class="rs-acts">
+      <button class="rs-btn cancel" id="docsClose">Fechar</button>
     </div>
   </div>
 </div>
@@ -1050,6 +1062,62 @@ window.pickMeal=function(on){
 document.getElementById("rsCancel").addEventListener("click",closeReschedule);
 document.getElementById("rsConfirm").addEventListener("click",confirmReschedule);
 document.getElementById("rsModal").addEventListener("click",function(e){if(e.target.id==="rsModal")closeReschedule();});
+
+// documentos da viagem modal
+const DOCS=[
+  {cat:"🛡️ Seguro Viagem", groups:[
+    {fam:"Dulce e Rafa", files:[
+      {label:"Seguro Viagem — Maria Dulce (AIG/Mastercard)", url:"assets/docs/seguro-dulce.pdf"},
+      {label:"Certificado de Elegibilidade — Maria Dulce", url:"assets/docs/certificado-elegibilidade-dulce.pdf"},
+      {label:"Seguro Viagem — Rafa (AIG/Mastercard)", url:"assets/docs/seguro-rafa.pdf"},
+      {label:"Certificado de Elegibilidade — Rafa", url:"assets/docs/certificado-elegibilidade-rafa.pdf"}
+    ]},
+    {fam:"Fio, Meg e Hernandes", files:[
+      {label:"Seguro Viagem — Fio, Meg e Hernandes (AIG/Visa)", url:"assets/docs/seguro-fio-meg-hernandes.pdf"}
+    ]}
+  ]},
+  {cat:"🚗 Reserva de Carro", groups:[
+    {fam:"Dulce e Rafa", files:[
+      {label:"Europcar — Aeroporto El Plumerillo (06 a 09/09)", url:"assets/docs/carro-dulce-rafa.pdf"}
+    ]},
+    {fam:"Fio e Meg", files:[
+      {label:"Hertz — Avenida Arístides Villanueva (06 a 15/09)", url:"assets/docs/carro-fio-meg.pdf"}
+    ]}
+  ]},
+  {cat:"🏨 Hotéis", groups:[
+    {fam:"Dulce e Rafa", files:[
+      {label:"Casa Septem — Check-in 06/09 a 09/09", url:"assets/docs/hotel-casa-septem-dulce-rafa.pdf"},
+      {label:"Huentala Hotel — Check-in 09/09 a 15/09", url:"assets/docs/hotel-huentala-dulce-rafa.pdf"}
+    ]},
+    {fam:"Fio e Meg", files:[
+      {label:"Casa Septem — Check-in 06/09 a 09/09", url:"assets/docs/hotel-casa-septem-fio-meg.pdf"},
+      {label:"Huentala Hotel — Check-in 09/09 a 15/09", url:"assets/docs/hotel-huentala-fio-meg.pdf"}
+    ]}
+  ]}
+];
+function renderDocsModal(){
+  let h="";
+  DOCS.forEach(section=>{
+    h+=`<div class="sh-files-hd" style="margin-top:6px">${et(section.cat)}</div>`;
+    section.groups.forEach(g=>{
+      h+=`<div style="font-size:12px;font-weight:700;color:var(--t2);margin:2px 0 2px">${et(g.fam)}</div>`;
+      g.files.forEach(f=>{
+        h+=`<a class="sh-file-row" href="${eu(f.url)}" target="_blank" rel="noopener" style="text-decoration:none;margin-bottom:6px">
+          <span class="sh-file-ico">📄</span>
+          <div class="sh-file-info"><div class="sh-file-name" style="white-space:normal">${et(f.label)}</div></div>
+        </a>`;
+      });
+    });
+  });
+  document.getElementById("docsBody").innerHTML=h;
+}
+document.getElementById("docsBtn").addEventListener("click",function(){
+  renderDocsModal();
+  document.getElementById("docsModal").classList.add("open");
+});
+function closeDocsModal(){ document.getElementById("docsModal").classList.remove("open"); }
+document.getElementById("docsClose").addEventListener("click",closeDocsModal);
+document.getElementById("docsModal").addEventListener("click",function(e){if(e.target.id==="docsModal")closeDocsModal();});
 
 // info importante modal
 window.openInfoModal=function(){
