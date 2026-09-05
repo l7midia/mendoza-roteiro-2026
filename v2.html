@@ -233,6 +233,9 @@ html.dark .leaflet-container{background:#333!important}
 .pdfv-bar{flex-shrink:0;display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;background:#000}
 .pdfv-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none;-webkit-tap-highlight-color:transparent}
 .pdfv-btn:hover{background:rgba(255,255,255,.25)}
+.pdfv-pages{flex:1;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#525659;display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 10px calc(14px + var(--safe-b))}
+.pdfv-pages canvas{max-width:100%;height:auto;box-shadow:0 2px 10px rgba(0,0,0,.5);background:#fff}
+.pdfv-loading{color:rgba(255,255,255,.7);font-size:13px;padding:40px 0}
 .sh-files-add{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;-webkit-appearance:none}
 .sh-file-list{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
 .sh-file-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -337,7 +340,7 @@ html.dark .b-opcional{background:rgba(150,120,230,.18);color:#B9A6F0}
     <a id="pdfViewerOpen" class="pdfv-btn" href="" target="_blank" rel="noopener" aria-label="Abrir em nova aba">⤢</a>
     <button id="pdfViewerClose" class="pdfv-btn" aria-label="Fechar">✕</button>
   </div>
-  <iframe id="pdfViewerFrame" src="" style="flex:1;width:100%;border:none;background:#fff"></iframe>
+  <div id="pdfViewerPages" class="pdfv-pages"></div>
 </div>
 <!-- reschedule modal -->
 <div class="rs-modal" id="rsModal" role="dialog" aria-modal="true">
@@ -375,6 +378,7 @@ html.dark .b-opcional{background:rgba(150,120,230,.18);color:#B9A6F0}
 <input type="file" id="fileInput" accept="*/*" multiple style="display:none">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 // Theme toggle — runs immediately, before paint, to avoid flash
 (function(){
@@ -1138,14 +1142,47 @@ document.getElementById("docsBody").addEventListener("click",function(e){
   e.preventDefault();
   openPdfViewer(a.dataset.pdf);
 });
-function openPdfViewer(url){
-  document.getElementById("pdfViewerFrame").src=url;
+if(window.pdfjsLib){
+  pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+let _pdfRenderToken=0;
+async function openPdfViewer(url){
   document.getElementById("pdfViewerOpen").href=url;
   document.getElementById("pdfViewer").classList.add("open");
+  const pagesEl=document.getElementById("pdfViewerPages");
+  pagesEl.innerHTML='<div class="pdfv-loading">Carregando PDF…</div>';
+  const myToken=++_pdfRenderToken;
+  if(!window.pdfjsLib){
+    window.open(url,'_blank');
+    closePdfViewer();
+    return;
+  }
+  try{
+    const pdf=await pdfjsLib.getDocument(url).promise;
+    if(myToken!==_pdfRenderToken) return;
+    pagesEl.innerHTML='';
+    const maxW=(pagesEl.clientWidth||800)-20;
+    for(let i=1;i<=pdf.numPages;i++){
+      const page=await pdf.getPage(i);
+      if(myToken!==_pdfRenderToken) return;
+      const baseVp=page.getViewport({scale:1});
+      const scale=Math.min(2.5, maxW/baseVp.width);
+      const vp=page.getViewport({scale});
+      const canvas=document.createElement('canvas');
+      canvas.width=vp.width; canvas.height=vp.height;
+      pagesEl.appendChild(canvas);
+      await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+      if(myToken!==_pdfRenderToken) return;
+    }
+  }catch(err){
+    if(myToken!==_pdfRenderToken) return;
+    pagesEl.innerHTML='<div class="pdfv-loading">Não foi possível carregar o PDF aqui. Toque em ⤢ para abrir em nova aba.</div>';
+  }
 }
 function closePdfViewer(){
+  _pdfRenderToken++;
   document.getElementById("pdfViewer").classList.remove("open");
-  document.getElementById("pdfViewerFrame").src="";
+  document.getElementById("pdfViewerPages").innerHTML='';
 }
 document.getElementById("pdfViewerClose").addEventListener("click",closePdfViewer);
 function closeDocsModal(){ document.getElementById("docsModal").classList.remove("open"); }
