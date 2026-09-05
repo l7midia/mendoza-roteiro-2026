@@ -337,7 +337,7 @@ html.dark .b-opcional{background:rgba(150,120,230,.18);color:#B9A6F0}
 <!-- pdf viewer -->
 <div class="lb" id="pdfViewer" role="dialog" aria-modal="true" style="flex-direction:column">
   <div class="pdfv-bar">
-    <a id="pdfViewerOpen" class="pdfv-btn" href="" target="_blank" rel="noopener" aria-label="Abrir em nova aba">⤢</a>
+    <button id="pdfViewerOpen" class="pdfv-btn" aria-label="Abrir PDF completo em nova aba">⤢</button>
     <button id="pdfViewerClose" class="pdfv-btn" aria-label="Fechar">✕</button>
   </div>
   <div id="pdfViewerPages" class="pdfv-pages"></div>
@@ -1146,8 +1146,12 @@ if(window.pdfjsLib){
   pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 }
 let _pdfRenderToken=0;
+let _currentPdfUrl="";
+document.getElementById("pdfViewerOpen").addEventListener("click",function(){
+  if(_currentPdfUrl) window.open(_currentPdfUrl,'_blank','noopener');
+});
 async function openPdfViewer(url){
-  document.getElementById("pdfViewerOpen").href=url;
+  _currentPdfUrl=url;
   document.getElementById("pdfViewer").classList.add("open");
   const pagesEl=document.getElementById("pdfViewerPages");
   pagesEl.innerHTML='<div class="pdfv-loading">Carregando PDF…</div>';
@@ -1166,10 +1170,13 @@ async function openPdfViewer(url){
       const page=await pdf.getPage(i);
       if(myToken!==_pdfRenderToken) return;
       const baseVp=page.getViewport({scale:1});
-      const scale=Math.min(2.5, maxW/baseVp.width);
-      const vp=page.getViewport({scale});
+      const cssScale=Math.min(2, maxW/baseVp.width);
+      const outputScale=Math.max(window.devicePixelRatio||1, 2);
+      const vp=page.getViewport({scale:cssScale*outputScale});
       const canvas=document.createElement('canvas');
       canvas.width=vp.width; canvas.height=vp.height;
+      canvas.style.width=Math.floor(vp.width/outputScale)+"px";
+      canvas.style.height=Math.floor(vp.height/outputScale)+"px";
       pagesEl.appendChild(canvas);
       await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
       if(myToken!==_pdfRenderToken) return;
